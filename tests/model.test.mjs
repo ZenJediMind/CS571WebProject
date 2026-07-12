@@ -41,6 +41,16 @@ test('all built-in templates derive closed loops', () => {
   }
 })
 
+test('start rotation selects the race direction', () => {
+  // Rotation 90 launches east (toward its rotated N edge); 270 launches west.
+  const eastward = rectangleGrid()
+  assert.deepEqual(derivePath(eastward)[1], { row: 2, col: 5 })
+
+  const westward = rectangleGrid()
+  westward[2][4] = { piece: PIECES.START, rotation: 270 }
+  assert.deepEqual(derivePath(westward)[1], { row: 2, col: 3 })
+})
+
 test('oil and ramp behave as straight-family connectivity', async () => {
   const { openEdges, isDrivable, PIECES: P } = await loadGameModule('courseModel')
   for (const piece of [P.OIL, P.RAMP]) {

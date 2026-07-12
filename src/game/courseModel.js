@@ -79,8 +79,17 @@ function sameCell(a, b) {
 }
 
 /**
- * Closed loop walk from the single START cell.
- * Bootstrap: START must have exactly 2 connected neighbors — pick one to begin.
+ * The edge a start piece launches cars toward: its base N opening, rotated.
+ * Rotation 0 → N, 90 → E, 180 → S, 270 → W — so rotating the start piece
+ * sets the race direction around the loop.
+ */
+export function startLaunchEdge(rotation) {
+  return rotateEdge('N', rotation)
+}
+
+/**
+ * Closed loop walk from the single START cell, heading out of its launch
+ * edge so the start rotation controls race direction.
  * Rejects branches, dead ends, and orphan drivable cells.
  */
 export function derivePath(grid) {
@@ -98,9 +107,14 @@ export function derivePath(grid) {
   const startNeighbors = connectedNeighbors(grid, start.row, start.col)
   if (startNeighbors.length !== 2) return null
 
+  const [dRow, dCol] = DELTA[startLaunchEdge(grid[start.row][start.col].rotation)]
+  const launchNeighbor = startNeighbors.find(
+    (neighbor) => neighbor.row === start.row + dRow && neighbor.col === start.col + dCol,
+  )
+
   const path = [start]
   let previous = start
-  let current = startNeighbors[0]
+  let current = launchNeighbor ?? startNeighbors[0]
 
   while (!sameCell(current, start)) {
     path.push(current)

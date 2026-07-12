@@ -54,6 +54,17 @@ function drawCheckerBand(ctx, roadWidth, squares = 8, rows = 2) {
   }
 }
 
+/** Arrow ahead of the start line pointing the race direction (local north). */
+function drawStartArrow(ctx, half) {
+  ctx.fillStyle = COLORS.dash
+  ctx.beginPath()
+  ctx.moveTo(0, -half * 0.78)
+  ctx.lineTo(-half * 0.22, -half * 0.46)
+  ctx.lineTo(half * 0.22, -half * 0.46)
+  ctx.closePath()
+  ctx.fill()
+}
+
 function drawBoostChevrons(ctx, half) {
   ctx.strokeStyle = COLORS.boost
   ctx.lineWidth = half * 0.16
@@ -131,7 +142,10 @@ export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
     ctx.setLineDash([])
   }
 
-  if (piece === PIECES.START) drawCheckerBand(ctx, roadWidth)
+  if (piece === PIECES.START) {
+    drawCheckerBand(ctx, roadWidth)
+    drawStartArrow(ctx, half)
+  }
   if (piece === PIECES.BOOST) drawBoostChevrons(ctx, half)
   if (piece === PIECES.PIT) {
     ctx.fillStyle = COLORS.pitBlue

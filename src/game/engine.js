@@ -23,6 +23,7 @@ const HANDBRAKE_TURN_MULTIPLIER = 1.6
 const HANDBRAKE_SCRUB = 240 // px/s² extra speed loss while drifting
 const OIL_STEER_FACTOR = 0.25
 const OIL_FRICTION_FACTOR = 0.3
+const OIL_THROTTLE_FACTOR = 0.35 // weak grip so a stopped car can crawl off
 const RAMP_MIN_SPEED = MAX_SPEED * 0.4
 const AIRBORNE_BASE_MS = 500
 
@@ -70,17 +71,18 @@ export function createRaceState(course, { maxSpeedFactor = 1 } = {}) {
 
 function applyThrottle(state, inputs, dt) {
   const topSpeed = MAX_SPEED * state.maxSpeedFactor
-  if (inputs.up && !state.onOil) {
+  if (inputs.up) {
     if (state.speed > topSpeed) {
       // Boost pads push past top speed; the surplus bleeds off gradually
       state.speed = Math.max(state.speed - BOOST_DECAY * dt, topSpeed)
     } else {
-      state.speed = Math.min(state.speed + ACCELERATION * dt, topSpeed)
+      const grip = state.onOil ? OIL_THROTTLE_FACTOR : 1
+      state.speed = Math.min(state.speed + ACCELERATION * grip * dt, topSpeed)
     }
   } else if (inputs.down) {
     state.speed = Math.max(state.speed - BRAKE_DECELERATION * dt, REVERSE_MAX_SPEED)
   } else {
-    // Oil carries speed: throttle is dead and friction drops way off
+    // Oil carries speed: friction drops way off while coasting
     const friction = COAST_FRICTION * (state.onOil ? OIL_FRICTION_FACTOR : 1)
     if (state.speed > 0) state.speed = Math.max(state.speed - friction * dt, 0)
     else if (state.speed < 0) state.speed = Math.min(state.speed + friction * dt, 0)
