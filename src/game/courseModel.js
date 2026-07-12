@@ -1,0 +1,133 @@
+// Grid-of-oriented-pieces course model: piece definitions, edge connectivity,
+// closed-loop path derivation, and course validation.
+export const GRID_COLS = 16
+export const GRID_ROWS = 10
+export const CELL_SIZE = 64
+
+export const PIECES = {
+  STRAIGHT: 'straight',
+  CURVE: 'curve',
+  S_BEND: 's_bend',
+  START: 'start',
+  BOOST: 'boost',
+  OBSTACLE: 'obstacle',
+  PIT: 'pit',
+}
+
+const BASE_OPENINGS = {
+  [PIECES.STRAIGHT]: ['N', 'S'],
+  [PIECES.START]: ['N', 'S'],
+  [PIECES.BOOST]: ['N', 'S'],
+  [PIECES.PIT]: ['N', 'S'],
+  [PIECES.CURVE]: ['N', 'E'],
+  [PIECES.S_BEND]: ['N', 'S'],
+  [PIECES.OBSTACLE]: [],
+}
+
+const EDGE_ORDER = ['N', 'E', 'S', 'W']
+export const DELTA = { N: [-1, 0], E: [0, 1], S: [1, 0], W: [0, -1] }
+const OPPOSITE = { N: 'S', E: 'W', S: 'N', W: 'E' }
+
+export const ROTATIONS = [0, 90, 180, 270]
+
+export function createEmptyGrid() {
+  return Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(null))
+}
+
+export function isDrivable(piece) {
+  return piece != null && piece !== PIECES.OBSTACLE
+}
+
+function rotateEdge(edge, rotation) {
+  const turns = (((rotation % 360) + 360) % 360) / 90
+  return EDGE_ORDER[(EDGE_ORDER.indexOf(edge) + turns) % 4]
+}
+
+export function openEdges(piece, rotation = 0) {
+  return new Set((BASE_OPENINGS[piece] ?? []).map((edge) => rotateEdge(edge, rotation)))
+}
+
+export function isTrackCell(grid, row, col) {
+  if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLS) return false
+  const cell = grid[row][col]
+  return cell !== null && isDrivable(cell.piece)
+}
+
+export function connectedNeighbors(grid, row, col) {
+  const cell = grid[row][col]
+  if (!cell || !isDrivable(cell.piece)) return []
+  const result = []
+  for (const edge of openEdges(cell.piece, cell.rotation)) {
+    const [dRow, dCol] = DELTA[edge]
+    const nRow = row + dRow
+    const nCol = col + dCol
+    if (!isTrackCell(grid, nRow, nCol)) continue
+    const neighbor = grid[nRow][nCol]
+    if (openEdges(neighbor.piece, neighbor.rotation).has(OPPOSITE[edge])) {
+      result.push({ row: nRow, col: nCol })
+    }
+  }
+  return result
+}
+
+function sameCell(a, b) {
+  return a.row === b.row && a.col === b.col
+}
+
+/**
+ * Closed loop walk from the single START cell.
+ * Bootstrap: START must have exactly 2 connected neighbors — pick one to begin.
+ * Rejects branches, dead ends, and orphan drivable cells.
+ */
+export function derivePath(grid) {
+  let start = null
+  for (let row = 0; row < GRID_ROWS; row++) {
+    for (let col = 0; col < GRID_COLS; col++) {
+      if (grid[row][col]?.piece === PIECES.START) {
+        if (start) return null
+        start = { row, col }
+      }
+    }
+  }
+  if (!start) return null
+
+  const startNeighbors = connectedNeighbors(grid, start.row, start.col)
+  if (startNeighbors.length !== 2) return null
+
+  const path = [start]
+  let previous = start
+  let current = startNeighbors[0]
+
+  while (!sameCell(current, start)) {
+    path.push(current)
+    if (path.length > GRID_ROWS * GRID_COLS) return null
+    const nextCandidates = connectedNeighbors(grid, current.row, current.col)
+      .filter((neighbor) => !sameCell(neighbor, previous))
+    if (nextCandidates.length !== 1) return null
+    previous = current
+    current = nextCandidates[0]
+  }
+
+  let trackCount = 0
+  for (let row = 0; row < GRID_ROWS; row++) {
+    for (let col = 0; col < GRID_COLS; col++) {
+      if (isTrackCell(grid, row, col)) trackCount++
+    }
+  }
+  if (path.length !== trackCount) return null
+  return path
+}
+
+export function validateCourse(grid) {
+  const path = derivePath(grid)
+  if (!path) {
+    return {
+      ok: false,
+      error: 'Track must be one closed loop with exactly one Start/Finish, matching piece connections, and no orphan pieces.',
+    }
+  }
+  if (path.length < 8) {
+    return { ok: false, error: 'Track is too short — use at least 8 pieces.' }
+  }
+  return { ok: true, error: null }
+}
