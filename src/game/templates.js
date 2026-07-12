@@ -75,10 +75,68 @@ const MAD_TOWN_CELLS = [
   { row: 5, col: 4, piece: PIECES.OBSTACLE, rotation: 0 },
 ]
 
+/**
+ * Circuit de Spa-Francorchamps (Belgium) adapted to the grid, run clockwise
+ * like the real circuit: La Source hairpin (T1) at bottom-left, the
+ * Eau Rouge/Raidillon uphill esses (S-bend + ramp), the flat-out Kemmel
+ * straight (boost pads ≈ DRS zone), Les Combes (T5–7) at top-right, Malmedy
+ * and Rivage (T8–9), the slippery Pouhon double-left (T10–11), Fagnes and
+ * Campus (T12–14), Stavelot (T15), the Blanchimont blast (T16–17), and the
+ * Bus Stop chicane (T18–19) onto the pit straight.
+ */
+const SPA_CELLS = [
+  // Pit straight. The start rotation sets the race direction (its rotated
+  // N edge): 270 launches west toward La Source, the real clockwise flow.
+  { row: 9, col: 5, piece: PIECES.START, rotation: 270 },
+  ...[4, 3, 2, 1].map((col) => ({ row: 9, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  // La Source hairpin (T1)
+  { row: 9, col: 0, piece: PIECES.CURVE, rotation: 0 },
+  { row: 8, col: 0, piece: PIECES.CURVE, rotation: 90 },
+  { row: 8, col: 1, piece: PIECES.STRAIGHT, rotation: 90 },
+  // Eau Rouge / Raidillon uphill esses (T2–4)
+  { row: 8, col: 2, piece: PIECES.CURVE, rotation: 270 },
+  { row: 7, col: 2, piece: PIECES.S_BEND, rotation: 0 },
+  { row: 6, col: 2, piece: PIECES.RAMP, rotation: 0 },
+  ...[5, 4, 3, 2].map((row) => ({ row, col: 2, piece: PIECES.STRAIGHT, rotation: 0 })),
+  { row: 1, col: 2, piece: PIECES.CURVE, rotation: 90 },
+  // Kemmel straight — the flat-out DRS/speed-trap run
+  ...[3, 6, 9].map((col) => ({ row: 1, col, piece: PIECES.BOOST, rotation: 90 })),
+  ...[4, 5, 7, 8, 10].map((col) => ({ row: 1, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  // Les Combes chicane (T5–7)
+  { row: 1, col: 11, piece: PIECES.CURVE, rotation: 270 },
+  { row: 0, col: 11, piece: PIECES.CURVE, rotation: 90 },
+  ...[12, 13].map((col) => ({ row: 0, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  // Malmedy (T8) into the downhill to Rivage
+  { row: 0, col: 14, piece: PIECES.CURVE, rotation: 180 },
+  ...[1, 2].map((row) => ({ row, col: 14, piece: PIECES.STRAIGHT, rotation: 0 })),
+  // Rivage (T9)
+  { row: 3, col: 14, piece: PIECES.CURVE, rotation: 270 },
+  ...[13, 12].map((col) => ({ row: 3, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  // Pouhon double-left (T10–11)
+  { row: 3, col: 11, piece: PIECES.CURVE, rotation: 90 },
+  { row: 4, col: 11, piece: PIECES.STRAIGHT, rotation: 0 },
+  // Fagnes into Campus (T12–14)
+  { row: 5, col: 11, piece: PIECES.CURVE, rotation: 0 },
+  ...[12, 13].map((col) => ({ row: 5, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  { row: 5, col: 14, piece: PIECES.CURVE, rotation: 180 },
+  ...[6, 7].map((row) => ({ row, col: 14, piece: PIECES.STRAIGHT, rotation: 0 })),
+  // Stavelot (T15) onto the Blanchimont blast (T16–17) — boosts point west
+  // with travel; the oil slick sits mid-straight with room to brake after
+  { row: 8, col: 14, piece: PIECES.CURVE, rotation: 270 },
+  ...[13, 12].map((col) => ({ row: 8, col, piece: PIECES.BOOST, rotation: 270 })),
+  { row: 8, col: 11, piece: PIECES.OIL, rotation: 90 },
+  ...[10, 9, 8].map((col) => ({ row: 8, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  // Bus Stop chicane (T18–19) and the pit box before the line
+  { row: 8, col: 7, piece: PIECES.CURVE, rotation: 90 },
+  { row: 9, col: 7, piece: PIECES.CURVE, rotation: 270 },
+  { row: 9, col: 6, piece: PIECES.PIT, rotation: 90 },
+]
+
 export const TEMPLATE_COURSES = [
   courseFromCells('tpl-ring-road', 'Ring Road', RING_CELLS),
   courseFromCells('tpl-capitol-loop', 'Capitol Loop', CAPITOL_CELLS),
   courseFromCells('tpl-mad-town-gp', 'Mad Town GP', MAD_TOWN_CELLS),
+  courseFromCells('tpl-spa-francorchamps', 'Circuit de Spa-Francorchamps', SPA_CELLS),
 ]
 
 /**
