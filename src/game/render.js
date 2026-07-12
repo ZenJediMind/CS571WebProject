@@ -208,6 +208,8 @@ export function drawCourseThumbnail(canvas, course) {
 }
 
 const CAR_DRAW_SIZE = 48
+const SKID_COLOR = 'rgba(18, 18, 24, 0.16)'
+const SPARK_LIFE_MS = 420
 
 function drawCheckpointHighlight(ctx, state) {
   const target = state.checkpoints[state.nextCheckpoint]
@@ -235,16 +237,126 @@ function drawCheckpointHighlight(ctx, state) {
   ctx.restore()
 }
 
-export function drawFrame(ctx, background, state, carImage) {
+/** Deterministic PRNG so particle bursts never touch Math.random. */
+function mulberry32(seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+export function createSparkBurst(seed, x, y) {
+  const rand = mulberry32(seed)
+  return Array.from({ length: 14 }, () => {
+    const angle = rand() * Math.PI * 2
+    const speed = 90 + rand() * 160
+    return { x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, lifeMs: SPARK_LIFE_MS }
+  })
+}
+
+export function updateAndDrawSparks(ctx, sparks, dtMs) {
+  const alive = []
+  for (const spark of sparks) {
+    spark.lifeMs -= dtMs
+    if (spark.lifeMs <= 0) continue
+    spark.x += (spark.vx * dtMs) / 1000
+    spark.y += (spark.vy * dtMs) / 1000
+    ctx.globalAlpha = spark.lifeMs / SPARK_LIFE_MS
+    ctx.fillStyle = COLORS.boost
+    ctx.fillRect(spark.x - 2, spark.y - 2, 4, 4)
+    alive.push(spark)
+  }
+  ctx.globalAlpha = 1
+  return alive
+}
+
+/** Transparent overlay the race loop stamps skid marks onto. */
+export function createMarksOverlay() {
+  const canvas = document.createElement('canvas')
+  canvas.width = COURSE_WIDTH
+  canvas.height = COURSE_HEIGHT
+  return canvas
+}
+
+export function stampSkidMarks(marksCtx, state) {
+  const rearX = state.x - Math.cos(state.heading) * 14
+  const rearY = state.y - Math.sin(state.heading) * 14
+  const sideX = -Math.sin(state.heading) * 10
+  const sideY = Math.cos(state.heading) * 10
+  marksCtx.fillStyle = SKID_COLOR
+  for (const sign of [-1, 1]) {
+    marksCtx.beginPath()
+    marksCtx.arc(rearX + sign * sideX, rearY + sign * sideY, 3, 0, Math.PI * 2)
+    marksCtx.fill()
+  }
+}
+
+/** Flat tinted silhouette for rival ghosts, with a name tag. */
+export function drawGhostCar(ctx, pose, color, label) {
+  ctx.save()
+  ctx.globalAlpha = 0.55
+  ctx.translate(pose.x, pose.y)
+  ctx.rotate(pose.heading + Math.PI / 2)
+  ctx.fillStyle = '#1a1a1a'
+  ctx.fillRect(-12, -16, 5, 9); ctx.fillRect(7, -16, 5, 9)
+  ctx.fillRect(-12, 7, 5, 9); ctx.fillRect(7, 7, 5, 9)
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.roundRect(-10, -20, 20, 40, 7)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.55)'
+  ctx.beginPath()
+  ctx.roundRect(-6, -12, 12, 9, 3)
+  ctx.fill()
+  ctx.restore()
+  if (label) {
+    ctx.save()
+    ctx.globalAlpha = 0.8
+    ctx.font = 'bold 11px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.strokeStyle = '#23252b'
+    ctx.lineWidth = 3
+    ctx.strokeText(label, pose.x, pose.y - 28)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(label, pose.x, pose.y - 28)
+    ctx.restore()
+  }
+}
+
+function drawCarImage(ctx, pose, carImage, { alpha = 1, scale = 1, shadow = false } = {}) {
+  if (!carImage) return
+  if (shadow) {
+    ctx.save()
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'
+    ctx.beginPath()
+    ctx.ellipse(pose.x + 6, pose.y + 12, 20, 12, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+  const size = CAR_DRAW_SIZE * scale
+  ctx.save()
+  ctx.globalAlpha = alpha
+  ctx.translate(pose.x, pose.y)
+  // Car art points north; heading 0 points east
+  ctx.rotate(pose.heading + Math.PI / 2)
+  ctx.drawImage(carImage, -size / 2, -size / 2, size, size)
+  ctx.restore()
+}
+
+export function drawFrame(ctx, scene) {
+  const { background, marks, state, carImage, bestGhostPose, rivalGhosts = [], sparks = [] } = scene
   ctx.drawImage(background, 0, 0)
+  if (marks) ctx.drawImage(marks, 0, 0)
   drawCheckpointHighlight(ctx, state)
 
-  ctx.save()
-  ctx.translate(state.x, state.y)
-  // Car art points north; heading 0 points east
-  ctx.rotate(state.heading + Math.PI / 2)
-  if (carImage) {
-    ctx.drawImage(carImage, -CAR_DRAW_SIZE / 2, -CAR_DRAW_SIZE / 2, CAR_DRAW_SIZE, CAR_DRAW_SIZE)
-  }
-  ctx.restore()
+  if (bestGhostPose) drawCarImage(ctx, bestGhostPose, carImage, { alpha: 0.35 })
+  for (const ghost of rivalGhosts) drawGhostCar(ctx, ghost.state, ghost.color, ghost.name)
+
+  const airborne = state.airborneMs > 0
+  drawCarImage(ctx, state, carImage, { scale: airborne ? 1.25 : 1, shadow: airborne })
+
+  if (sparks.length > 0) updateAndDrawSparks(ctx, sparks, 0) // draw-only; loop passes dt separately
 }
