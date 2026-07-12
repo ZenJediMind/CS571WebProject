@@ -56,13 +56,15 @@ const CAPITOL_CELLS = [
 /** Larger outer loop with interior obstacles (not on the path) and a boost run. */
 const MAD_TOWN_CELLS = [
   { row: 1, col: 1, piece: PIECES.CURVE, rotation: 90 },
-  ...[2, 3, 4, 6, 7, 8, 9].map((col) => ({ row: 1, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  ...[2, 3, 4, 6, 8, 9].map((col) => ({ row: 1, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  { row: 1, col: 7, piece: PIECES.RAMP, rotation: 90 },
   { row: 1, col: 5, piece: PIECES.START, rotation: 90 },
   { row: 1, col: 10, piece: PIECES.CURVE, rotation: 180 },
   ...[2, 3, 5, 6].map((row) => ({ row, col: 10, piece: PIECES.STRAIGHT, rotation: 0 })),
   { row: 4, col: 10, piece: PIECES.BOOST, rotation: 0 },
   { row: 7, col: 10, piece: PIECES.CURVE, rotation: 270 },
-  ...[9, 8, 6, 5, 4, 3, 2].map((col) => ({ row: 7, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  ...[9, 8, 6, 4, 3, 2].map((col) => ({ row: 7, col, piece: PIECES.STRAIGHT, rotation: 90 })),
+  { row: 7, col: 5, piece: PIECES.OIL, rotation: 90 },
   { row: 7, col: 7, piece: PIECES.BOOST, rotation: 90 },
   { row: 7, col: 1, piece: PIECES.CURVE, rotation: 0 },
   ...[6, 5, 3, 2].map((row) => ({ row, col: 1, piece: PIECES.STRAIGHT, rotation: 0 })),

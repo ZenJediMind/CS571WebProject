@@ -40,3 +40,11 @@ test('all built-in templates derive closed loops', () => {
     assert.ok(derivePath(course.grid), `${course.id} must derive`)
   }
 })
+
+test('oil and ramp behave as straight-family connectivity', async () => {
+  const { openEdges, isDrivable, PIECES: P } = await loadGameModule('courseModel')
+  for (const piece of [P.OIL, P.RAMP]) {
+    assert.deepEqual([...openEdges(piece, 90)].sort(), ['E', 'W'])
+    assert.equal(isDrivable(piece), true)
+  }
+})

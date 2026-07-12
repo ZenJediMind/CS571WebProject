@@ -122,7 +122,7 @@ export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
   ctx.stroke()
 
   // Dashed centerline (skip on specials that draw their own markings)
-  if (piece !== PIECES.START && piece !== PIECES.BOOST) {
+  if (piece !== PIECES.START && piece !== PIECES.BOOST && piece !== PIECES.RAMP) {
     tracePieceCenterline(ctx, piece, half)
     ctx.strokeStyle = COLORS.dash
     ctx.lineWidth = Math.max(2, cellSize * 0.04)
@@ -142,6 +142,33 @@ export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('P', 0, 1)
+  }
+  if (piece === PIECES.OIL) {
+    // Iridescent slick: dark puddle with faint sheen arcs
+    ctx.fillStyle = 'rgba(22, 24, 34, 0.6)'
+    ctx.beginPath()
+    ctx.ellipse(0, 0, roadWidth * 0.34, half * 0.62, 0.35, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.lineWidth = 2
+    for (const [radius, tint] of [[half * 0.3, 'rgba(125, 60, 152, 0.5)'], [half * 0.18, 'rgba(23, 162, 184, 0.5)']]) {
+      ctx.strokeStyle = tint
+      ctx.beginPath()
+      ctx.arc(0, 0, radius, 0.4, 2.4)
+      ctx.stroke()
+    }
+  }
+  if (piece === PIECES.RAMP) {
+    // Bright launch wedge with hazard edge
+    ctx.fillStyle = COLORS.boost
+    ctx.beginPath()
+    ctx.moveTo(-roadWidth * 0.3, half * 0.45)
+    ctx.lineTo(roadWidth * 0.3, half * 0.45)
+    ctx.lineTo(0, -half * 0.4)
+    ctx.closePath()
+    ctx.fill()
+    ctx.strokeStyle = '#23252b'
+    ctx.lineWidth = 3
+    ctx.stroke()
   }
 
   ctx.restore()

@@ -12,6 +12,8 @@ export const PIECES = {
   BOOST: 'boost',
   OBSTACLE: 'obstacle',
   PIT: 'pit',
+  OIL: 'oil',
+  RAMP: 'ramp',
 }
 
 const BASE_OPENINGS = {
@@ -22,6 +24,8 @@ const BASE_OPENINGS = {
   [PIECES.CURVE]: ['N', 'E'],
   [PIECES.S_BEND]: ['N', 'S'],
   [PIECES.OBSTACLE]: [],
+  [PIECES.OIL]: ['N', 'S'],
+  [PIECES.RAMP]: ['N', 'S'],
 }
 
 const EDGE_ORDER = ['N', 'E', 'S', 'W']

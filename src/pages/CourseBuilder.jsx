@@ -39,6 +39,8 @@ const PALETTE_SECTIONS = [
       { label: 'Boost Pad', piece: PIECES.BOOST },
       { label: 'Obstacle', piece: PIECES.OBSTACLE },
       { label: 'Pit Stop', piece: PIECES.PIT },
+      { label: 'Oil Slick', piece: PIECES.OIL },
+      { label: 'Ramp', piece: PIECES.RAMP },
     ],
   },
 ]
