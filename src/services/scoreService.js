@@ -64,6 +64,23 @@ export function recordTime(courseId, ms) {
   return { pointsEarned, newBest, beatenRivals, previousBest }
 }
 
+/**
+ * Idempotent recordTime keyed by resultId: StrictMode remounts and page
+ * refreshes replay the same award instead of double-counting points.
+ */
+export function recordTimeOnce(resultId, courseId, ms) {
+  const guardKey = `wisconsinRacer.v1.award.${resultId}`
+  try {
+    const cached = sessionStorage.getItem(guardKey)
+    if (cached) return JSON.parse(cached)
+  } catch { /* private mode — fall through and award once per mount */ }
+  const award = recordTime(courseId, ms)
+  try {
+    sessionStorage.setItem(guardKey, JSON.stringify(award))
+  } catch { /* session guard unavailable; award still recorded */ }
+  return award
+}
+
 /** Rivals + the player's best (if any), sorted fastest first. */
 export function getCourseLeaderboard(courseId) {
   const rows = getRivalTimes(courseId)
