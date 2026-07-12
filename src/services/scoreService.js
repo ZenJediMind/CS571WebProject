@@ -8,11 +8,13 @@ const POINTS_KEY = 'points'
 export const PLAYER_NAME = 'You'
 
 const RIVALS = [
-  { id: 'rival-bucky', name: 'Bucky B.' },
-  { id: 'rival-jane', name: 'RacerJane' },
-  { id: 'rival-cheez', name: 'CheeseWhiz' },
-  { id: 'rival-brat', name: 'Brat Zermann' },
+  { id: 'rival-bucky', name: 'Bucky B.', car: 'The Badger' },
+  { id: 'rival-jane', name: 'RacerJane', car: 'Blue Streak' },
+  { id: 'rival-cheez', name: 'CheeseWhiz', car: 'Cheese Wedge' },
+  { id: 'rival-brat', name: 'Brat Zermann', car: 'Bratwagen' },
 ]
+
+export const PLAYER_CAR_NAME = 'My Ride'
 
 const POINTS_PER_RIVAL_BEATEN = 10
 const POINTS_PER_NEW_BEST = 5
@@ -87,7 +89,7 @@ export function getCourseLeaderboard(courseId) {
     .map((rival) => ({ ...rival, isPlayer: false }))
   const playerBest = getBestTime(courseId)
   if (playerBest !== null) {
-    rows.push({ id: 'player', name: PLAYER_NAME, ms: playerBest, isPlayer: true })
+    rows.push({ id: 'player', name: PLAYER_NAME, car: PLAYER_CAR_NAME, ms: playerBest, isPlayer: true })
   }
   return rows.sort((a, b) => a.ms - b.ms)
 }
@@ -99,7 +101,7 @@ export function getPointsRanking() {
     points: 20 + (hashString(`points:${rival.id}`) % 120),
     isPlayer: false,
   }))
-  rows.push({ id: 'player', name: PLAYER_NAME, points: getTotalPoints(), isPlayer: true })
+  rows.push({ id: 'player', name: PLAYER_NAME, car: PLAYER_CAR_NAME, points: getTotalPoints(), isPlayer: true })
   return rows.sort((a, b) => b.points - a.points)
 }
 
