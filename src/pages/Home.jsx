@@ -10,6 +10,7 @@ const SECONDARY_LINKS = [
   { label: 'Browse Courses', to: '/browse' },
   { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Invite Friends', to: '/invite' },
+  { label: 'Settings', to: '/settings' },
 ]
 
 export default function Home() {

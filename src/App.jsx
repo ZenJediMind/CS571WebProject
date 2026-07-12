@@ -8,6 +8,7 @@ import Race from './pages/Race'
 import Results from './pages/Results'
 import Leaderboard from './pages/Leaderboard'
 import Invite from './pages/Invite'
+import Settings from './pages/Settings'
 
 function Layout() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/results/:courseId" element={<Results />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/invite" element={<Invite />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </HashRouter>
