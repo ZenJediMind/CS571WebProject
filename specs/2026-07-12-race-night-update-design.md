@@ -6,9 +6,25 @@
 
 ## Scope
 
-In: Settings page, ghost racing (personal-best replay + live rival ghosts), live checkpoint splits, skid marks, boost particles, synthesized audio, handbrake drift, oil slick piece, ramp piece with airborne state, template showcase (Mad Town GP), Node fixture coverage.
+In: two P0 fixes from the July 12 project review (real-time race clock, visible save failures), Settings page, ghost racing (personal-best replay + live rival ghosts), live checkpoint splits, skid marks, boost particles, synthesized audio, handbrake drift, oil slick piece, ramp piece with airborne state, template showcase (Mad Town GP), committed Node test coverage.
 
-Out: ghost collisions, unlockables/progression, course share codes, any backend, changes to `main`.
+Out: ghost collisions, unlockables/progression, course share codes, any backend, changes to `main`, the review's remaining P1/P2 items (mobile race controls, contrast token, canvas accessibility, README, lazy routes — tracked in `WEB_PROJECT_REVIEW.md` as follow-up work).
+
+## 0. Prerequisites from the project review (P0)
+
+`WEB_PROJECT_REVIEW.md` (July 12) found two verified P0 defects that this update would otherwise build on top of:
+
+### Real-time race clock
+`stepRace` clamps a frame to 0.05s and adds the **clamped** value to `elapsedMs`, so a device running below 20 FPS records less race time than actually passed — artificially fast leaderboard scores. Race night makes this worse: ghost recordings, split deltas, and rival pace-matching are all keyed on `elapsedMs`, so the bug would be baked into persisted ghost data.
+
+**Fix (before any ghost work):** `stepRace` keeps the full frame's elapsed time and advances physics in substeps of ≤ 0.05s. Frames longer than 0.25s (tab switch, debugger pause) are treated as a stall and clamped — a background tab must not fast-forward or free-fall the race. Regression test: one 100ms step equals two 50ms steps in both `elapsedMs` and position.
+
+### Visible save failures
+`writeKey` swallows quota/private-mode failures and callers navigate away as if the save succeeded, losing work silently. Race night adds two more writers (settings, ~5KB ghost recordings per course — the largest values yet).
+
+**Fix:** `writeKey` returns success/failure. Course and car save flows stay on the page and show a clear error instead of navigating; `saveGhostIfBest` reports the write result. Low-stakes writes (votes, scores, settings) degrade gracefully because reads already fall back.
+
+The review's P2 "stop redrawing the paused race" finding is folded into the race-loop rewrite (Section 3 work): the animation loop only runs while racing; countdown/pause render one static frame.
 
 ## 1. Settings
 
@@ -25,7 +41,7 @@ Ghosts are **purely visual**: no collision, no effect on checkpoints, laps, or s
 
 ### Personal-best ghost (`'best'` / `'both'`)
 - **Recording:** during a race the loop samples `{x, y, heading}` every 100ms of *simulation* time (not wall clock), plus a cumulative checkpoint-split array (`elapsedMs` at each checkpoint crossing and lap line).
-- **Persistence:** `src/services/ghostService.js` stores one recording per course (key `ghostLaps`), replaced only when the run is a new personal best. Coordinates rounded to integers; ~5KB per course.
+- **Persistence:** `src/services/ghostService.js` stores one recording per course (key `ghostLaps`), replaced only when the run is a new personal best. Coordinates rounded to integers; ~5KB per course. `saveGhostIfBest` returns whether the write actually persisted (see Section 0).
 - **Playback:** interpolate position/heading between samples at the current race `elapsedMs`. Rendered as the player's own car bitmap at reduced alpha.
 - Chosen over input-replay: position samples survive engine tuning changes; input replay would silently desync.
 
@@ -95,6 +111,8 @@ Engine stays pure (no DOM, no timers, no `Math.random`); audio and particles liv
 
 ## 6. Testing (Node fixtures, deterministic)
 
+- Timing fairness: a 100ms step records 100ms of `elapsedMs` and matches two 50ms steps bit-for-bit; a 5s gap clamps to 0.25s.
+- Storage: `writeKey` reports failure (and `readKey` falls back) when storage is unavailable.
 - Autopilot still completes 3 laps on all templates, including Mad Town GP with oil + ramp on the loop.
 - Handbrake: measurably smaller turn radius vs. no handbrake at the same speed.
 - Oil: heading change under steering drops while on an oil cell.
