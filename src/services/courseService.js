@@ -71,6 +71,10 @@ export function copyCourse(id) {
   })
 }
 
+export function deleteCourse(id) {
+  writeKey(COURSES_KEY, readUserCourses().filter((course) => course.id !== id))
+}
+
 export function voteForCourse(id) {
   if (!findRawCourse(id)) return
   const votes = readKey(VOTES_KEY, {})

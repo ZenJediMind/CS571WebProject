@@ -1,12 +1,11 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createDraftCourse, saveCourse } from '../services/courseService'
 
-/** Create a fresh draft course and jump into the builder for it. */
+/**
+ * Jump into the builder with a fresh, in-memory draft. Nothing is persisted
+ * until the racer saves or test-drives, so abandoned drafts leave no litter.
+ */
 export function useDraftCourse() {
   const navigate = useNavigate()
-  return useCallback(() => {
-    const draft = saveCourse(createDraftCourse())
-    navigate(`/build/${draft.id}`)
-  }, [navigate])
+  return useCallback(() => navigate('/build/new'), [navigate])
 }

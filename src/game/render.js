@@ -199,6 +199,10 @@ function drawCheckpointHighlight(ctx, state) {
   ctx.globalAlpha = 1
   ctx.font = 'bold 13px sans-serif'
   ctx.textAlign = 'center'
+  // Dark outline keeps the label readable over any track color
+  ctx.strokeStyle = '#23252b'
+  ctx.lineWidth = 3
+  ctx.strokeText('CHECK', centerX, centerY - CELL_SIZE * 0.42)
   ctx.fillStyle = COLORS.checkpoint
   ctx.fillText('CHECK', centerX, centerY - CELL_SIZE * 0.42)
   ctx.restore()

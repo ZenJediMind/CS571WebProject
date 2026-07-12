@@ -6,8 +6,11 @@ import { drawCourseThumbnail } from '../game/render'
 
 const THUMBNAIL_WIDTH = 320
 
-/** One community course: live-drawn thumbnail, votes, Play, Copy & Edit. */
-export default function CourseCard({ course, onVote, onCopy }) {
+/**
+ * One community course: live-drawn thumbnail, votes, Play, and
+ * Copy & Edit (templates) or Edit / Delete (your own courses).
+ */
+export default function CourseCard({ course, onVote, onCopy, onDelete }) {
   const navigate = useNavigate()
   const canvasRef = useRef(null)
 
@@ -49,9 +52,24 @@ export default function CourseCard({ course, onVote, onCopy }) {
           >
             Play
           </Button>
-          <Button variant="outline-primary" onClick={() => onCopy(course.id)}>
-            Copy &amp; Edit
-          </Button>
+          {course.isTemplate ? (
+            <Button variant="outline-primary" onClick={() => onCopy(course.id)}>
+              Copy &amp; Edit
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline-primary" onClick={() => navigate(`/build/${course.id}`)}>
+                Edit
+              </Button>
+              <Button
+                variant="outline-danger"
+                onClick={() => onDelete(course)}
+                aria-label={`Delete ${course.name}`}
+              >
+                Delete
+              </Button>
+            </>
+          )}
         </div>
       </Card.Body>
     </Card>

@@ -5,7 +5,7 @@ import Row from 'react-bootstrap/Row'
 import { useNavigate } from 'react-router-dom'
 import CourseCard from '../components/CourseCard'
 import PageHeader from '../components/PageHeader'
-import { copyCourse, listCourses, voteForCourse } from '../services/courseService'
+import { copyCourse, deleteCourse, listCourses, voteForCourse } from '../services/courseService'
 
 export default function CourseBrowser() {
   const navigate = useNavigate()
@@ -26,6 +26,13 @@ export default function CourseBrowser() {
     if (copy) navigate(`/build/${copy.id}`)
   }
 
+  const handleDelete = (course) => {
+    if (window.confirm(`Delete "${course.name}"? This can't be undone.`)) {
+      deleteCourse(course.id)
+      setCourses(listCourses())
+    }
+  }
+
   return (
     <Container className="py-4">
       <PageHeader title="Community Courses" />
@@ -35,7 +42,12 @@ export default function CourseBrowser() {
       <Row xs={1} sm={2} lg={3} className="g-3">
         {courses.map((course) => (
           <Col key={course.id}>
-            <CourseCard course={course} onVote={handleVote} onCopy={handleCopy} />
+            <CourseCard
+              course={course}
+              onVote={handleVote}
+              onCopy={handleCopy}
+              onDelete={handleDelete}
+            />
           </Col>
         ))}
       </Row>

@@ -11,13 +11,15 @@ export default function PiecePreview({ piece, rotation = 0, size = 44, label }) 
     drawTrackPiece(ctx, piece, rotation, 0, 0, size)
   }, [piece, rotation, size])
 
+  // Decorative when unlabeled (the enclosing button carries the text label)
   return (
     <canvas
       ref={canvasRef}
       width={size}
       height={size}
-      role="img"
-      aria-label={label}
+      role={label ? 'img' : undefined}
+      aria-label={label || undefined}
+      aria-hidden={label ? undefined : true}
       style={{ borderRadius: 4 }}
     />
   )

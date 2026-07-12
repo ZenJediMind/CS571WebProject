@@ -1,0 +1,26 @@
+AI Usage Disclosure — Wisconsin Racer (CS571 Web Project)
+==========================================================
+
+Approximate share of AI-generated code: ~90%
+
+Tools used: Claude Code (Anthropic), working from the author's own design
+documents: the approved project proposal, the Figma low-fidelity prototype
+(prototype-design.md), and a detailed implementation plan written and
+reviewed by the author (specs/2026-07-11-wisconsin-racer-game-plan.md).
+
+Author's role:
+- Designed the game concept, screens, and navigation flow (proposal + Figma
+  prototype) and recorded the prototype walkthrough.
+- Specified the architecture and constraints in the implementation plan:
+  client-only Vite React SPA, localStorage mock backend, oriented track-piece
+  course model, MS Paint-style car designer, HashRouter routing, and
+  alignment with CS571 lecture idioms.
+- Directed the AI through each task, reviewed the generated code and
+  the running app, and made the final decisions on gameplay tuning and UX.
+
+AI's role:
+- Implemented the planned modules (services, course model, race engine,
+  canvas renderer, React pages/components) following the plan and the
+  course's code-style rules.
+- Wrote deterministic Node test fixtures for the course model and race
+  engine (closed-loop path derivation, 3-lap autopilot completion).

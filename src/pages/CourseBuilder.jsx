@@ -11,7 +11,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import PiecePreview from '../components/PiecePreview'
 import { GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
-import { copyCourse, getCourse, saveCourse } from '../services/courseService'
+import { copyCourse, createDraftCourse, getCourse, saveCourse } from '../services/courseService'
 
 const BUILDER_CELL = 64
 const CANVAS_WIDTH = GRID_COLS * BUILDER_CELL
@@ -125,7 +125,11 @@ export default function CourseBuilder() {
   const navigate = useNavigate()
   const canvasRef = useRef(null)
 
-  const course = useMemo(() => getCourse(courseId), [courseId])
+  // '/build/new' edits a fresh in-memory draft; it only persists on Save/Test
+  const course = useMemo(
+    () => (courseId === 'new' ? createDraftCourse() : getCourse(courseId)),
+    [courseId],
+  )
   const [name, setName] = useState(course?.name ?? '')
   const [editor, dispatch] = useReducer(editorReducer, null, () => ({
     grid: course?.grid ?? null,
@@ -307,6 +311,8 @@ export default function CourseBuilder() {
 
   const handleTestDrive = () => {
     const saved = persistCourse()
+    // Swap the /build/new history entry for the saved id so Back returns here
+    if (courseId === 'new') navigate(`/build/${saved.id}`, { replace: true })
     navigate(`/race/${saved.id}`)
   }
 
@@ -349,6 +355,7 @@ export default function CourseBuilder() {
 
   return (
     <Container fluid="xl" className="py-3">
+      <h1 className="visually-hidden">Course Builder</h1>
       <Row className="align-items-center g-2 mb-2">
         <Col xs="auto">
           <Button variant="outline-secondary" size="sm" onClick={handleBack}>← Back</Button>
