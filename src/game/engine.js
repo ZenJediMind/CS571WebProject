@@ -16,6 +16,7 @@ const PIT_MAX_SPEED = MAX_SPEED * 0.55
 const OBSTACLE_BOUNCE_FACTOR = -0.5
 const WALL_BOUNCE_FACTOR = -0.25
 const MAX_STEP_SECONDS = 0.05 // clamp long frames so physics stays stable
+const MAX_FRAME_SECONDS = 0.25 // longer gaps (tab switch, debugger) are a stall, not race time
 const CHECKPOINT_SPACING = 4 // every 4th path cell is a checkpoint
 
 const cellKey = (row, col) => `${row}:${col}`
@@ -146,12 +147,16 @@ function applyCellEffects(state) {
 
 export function stepRace(state, inputs, dtSeconds) {
   if (state.finished) return state
-  const dt = Math.min(dtSeconds, MAX_STEP_SECONDS)
-
-  state.elapsedMs += dt * 1000
-  applyThrottle(state, inputs, dt)
-  applySteering(state, inputs, dt)
-  moveWithCollisions(state, dt)
-  applyCellEffects(state)
+  // Keep real elapsed time but integrate physics in short, stable substeps
+  let remaining = Math.min(dtSeconds, MAX_FRAME_SECONDS)
+  while (remaining > 0 && !state.finished) {
+    const dt = Math.min(remaining, MAX_STEP_SECONDS)
+    remaining -= dt
+    state.elapsedMs += dt * 1000
+    applyThrottle(state, inputs, dt)
+    applySteering(state, inputs, dt)
+    moveWithCollisions(state, dt)
+    applyCellEffects(state)
+  }
   return state
 }

@@ -48,3 +48,21 @@ for (const course of TEMPLATE_COURSES) {
 test('engine is deterministic', () => {
   assert.equal(runToFinish(TEMPLATE_COURSES[0]).elapsedMs, runToFinish(TEMPLATE_COURSES[0]).elapsedMs)
 })
+
+test('long frames record full elapsed time with identical physics', () => {
+  const chopped = createRaceState(TEMPLATE_COURSES[0])
+  const long = createRaceState(TEMPLATE_COURSES[0])
+  for (let i = 0; i < 20; i++) stepRace(chopped, { up: true }, 0.05)
+  for (let i = 0; i < 10; i++) stepRace(long, { up: true }, 0.1)
+  assert.ok(Math.abs(long.elapsedMs - 1000) < 1e-6, `recorded ${long.elapsedMs}ms of 1000ms`)
+  assert.equal(long.elapsedMs, chopped.elapsedMs)
+  assert.equal(long.x, chopped.x)
+  assert.equal(long.y, chopped.y)
+  assert.equal(long.speed, chopped.speed)
+})
+
+test('a huge frame gap is clamped, not fast-forwarded', () => {
+  const state = createRaceState(TEMPLATE_COURSES[0])
+  stepRace(state, { up: true }, 5)
+  assert.ok(Math.abs(state.elapsedMs - 250) < 1e-6)
+})
