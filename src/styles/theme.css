@@ -1,0 +1,210 @@
+/* Wisconsin Racer theme — tokens layered over Bootstrap via CSS variables.
+   Palette: Badger red, cheddar, turf green, asphalt. Display type: Bungee
+   (roadside-signage lettering); body: Atkinson Hyperlegible; HUD: Plex Mono. */
+:root {
+  --wr-red: #c5050c;
+  --wr-red-dark: #96040a;
+  --wr-cheddar: #f7a600;
+  --wr-cheddar-dark: #c98700;
+  --wr-turf: #3a7d2c;
+  --wr-asphalt: #23252b;
+  --wr-asphalt-2: #32353d;
+  --wr-ink: #1d1f24;
+  --wr-bg: #efeee9;
+  --wr-paper: #ffffff;
+  --wr-font-display: 'Bungee', 'Arial Black', sans-serif;
+  --wr-font-body: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --wr-font-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+}
+
+body {
+  background: var(--wr-bg);
+  color: var(--wr-ink);
+  font-family: var(--wr-font-body);
+}
+
+h1, h2, h3, .wr-display {
+  font-family: var(--wr-font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.wr-mono {
+  font-family: var(--wr-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Signature device: checkered start/finish ribbon. */
+.wr-checker {
+  height: 14px;
+  background: repeating-conic-gradient(var(--wr-asphalt) 0% 25%, var(--wr-paper) 0% 50%);
+  background-size: 28px 28px;
+  border-radius: 2px;
+}
+
+/* Bootstrap component theming */
+.btn-primary {
+  --bs-btn-bg: var(--wr-red);
+  --bs-btn-border-color: var(--wr-red);
+  --bs-btn-hover-bg: var(--wr-red-dark);
+  --bs-btn-hover-border-color: var(--wr-red-dark);
+  --bs-btn-active-bg: var(--wr-red-dark);
+  --bs-btn-active-border-color: var(--wr-red-dark);
+  --bs-btn-disabled-bg: var(--wr-red);
+  --bs-btn-disabled-border-color: var(--wr-red);
+  --bs-btn-focus-shadow-rgb: 197, 5, 12;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--wr-red);
+  --bs-btn-border-color: var(--wr-red);
+  --bs-btn-hover-bg: var(--wr-red);
+  --bs-btn-hover-border-color: var(--wr-red);
+  --bs-btn-active-bg: var(--wr-red-dark);
+  --bs-btn-active-border-color: var(--wr-red-dark);
+  --bs-btn-focus-shadow-rgb: 197, 5, 12;
+}
+
+.btn-warning {
+  --bs-btn-bg: var(--wr-cheddar);
+  --bs-btn-border-color: var(--wr-cheddar);
+  --bs-btn-hover-bg: var(--wr-cheddar-dark);
+  --bs-btn-hover-border-color: var(--wr-cheddar-dark);
+  --bs-btn-active-bg: var(--wr-cheddar-dark);
+  --bs-btn-active-border-color: var(--wr-cheddar-dark);
+}
+
+.btn-success {
+  --bs-btn-bg: var(--wr-turf);
+  --bs-btn-border-color: var(--wr-turf);
+  --bs-btn-hover-bg: #2e6323;
+  --bs-btn-hover-border-color: #2e6323;
+  --bs-btn-active-bg: #2e6323;
+  --bs-btn-active-border-color: #2e6323;
+}
+
+.wr-navbar {
+  background: var(--wr-asphalt);
+}
+
+.wr-navbar .navbar-brand {
+  font-family: var(--wr-font-display);
+  font-size: 1.1rem;
+}
+
+/* Main Menu */
+.wr-hero-title {
+  font-size: clamp(2rem, 7vw, 3.6rem);
+  color: var(--wr-red);
+  text-shadow: 3px 3px 0 var(--wr-asphalt);
+}
+
+.wr-menu-btn {
+  font-family: var(--wr-font-display);
+  font-size: 1.05rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+/* Race HUD */
+.wr-hud-badge {
+  font-family: var(--wr-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  background: var(--wr-asphalt);
+  color: var(--wr-paper);
+  border: 2px solid var(--wr-cheddar);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  min-width: 7.5rem;
+  text-align: center;
+}
+
+.wr-countdown {
+  font-family: var(--wr-font-display);
+  font-size: clamp(3rem, 12vw, 6rem);
+  color: var(--wr-cheddar);
+  text-shadow: 4px 4px 0 var(--wr-asphalt);
+}
+
+/* Canvas surfaces */
+.wr-game-canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 4px solid var(--wr-asphalt);
+  border-radius: 8px;
+}
+
+.wr-paint-frame {
+  /* Graph-paper underlay beneath the transparent drawing layer */
+  background:
+    linear-gradient(to right, rgba(60, 110, 200, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(60, 110, 200, 0.14) 1px, transparent 1px),
+    var(--wr-paper);
+  background-size: 16px 16px, 16px 16px, auto;
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 4px;
+  display: inline-block;
+  line-height: 0;
+}
+
+.wr-paint-frame canvas {
+  max-width: 100%;
+  height: auto;
+  touch-action: none;
+}
+
+.wr-builder-canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 3px solid var(--wr-asphalt);
+  border-radius: 6px;
+  cursor: crosshair;
+}
+
+/* Palette / tool buttons */
+.wr-swatch {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 4px;
+  padding: 0;
+}
+
+.wr-swatch[aria-pressed='true'] {
+  outline: 3px solid var(--wr-cheddar);
+  outline-offset: 1px;
+}
+
+/* Accessibility: strong visible focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--wr-cheddar);
+  outline-offset: 2px;
+}
+
+/* Leaderboard "You" highlight */
+.wr-row-you {
+  background: #fdf3d7;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wr-menu-btn {
+    transition: transform 120ms ease;
+  }
+
+  .wr-menu-btn:hover {
+    transform: translateX(4px);
+  }
+
+  .wr-countdown {
+    animation: wr-pop 400ms ease;
+  }
+
+  @keyframes wr-pop {
+    from { transform: scale(1.35); opacity: 0.4; }
+    to { transform: scale(1); opacity: 1; }
+  }
+}
