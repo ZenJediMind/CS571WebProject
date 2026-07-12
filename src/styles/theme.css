@@ -208,3 +208,16 @@ h1, h2, h3, .wr-display {
     to { transform: scale(1); opacity: 1; }
   }
 }
+
+.wr-split-chip {
+  font-family: var(--wr-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  color: #ffffff;
+}
+
+.wr-split-ahead { background: var(--wr-turf); }
+.wr-split-behind { background: var(--wr-red); }

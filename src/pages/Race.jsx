@@ -8,7 +8,9 @@ import { getCourse } from '../services/courseService'
 import { loadPlayerCar } from '../services/carService'
 import { validateCourse } from '../game/courseModel'
 import { COURSE_WIDTH, COURSE_HEIGHT } from '../game/render'
+import { RaceAudio } from '../game/audio'
 import { formatMs } from '../services/scoreService'
+import { getSettings, saveSettings } from '../services/settingsService'
 import { useRaceLoop } from '../hooks/useRaceLoop'
 
 const COUNTDOWN_START = 3
@@ -34,6 +36,26 @@ export default function Race() {
   const [showGo, setShowGo] = useState(false)
   const [paused, setPaused] = useState(false)
 
+  const settings = useMemo(() => getSettings(), [])
+  const [soundOn, setSoundOn] = useState(settings.sound)
+  const audioRef = useRef(null)
+
+  useEffect(() => {
+    audioRef.current = new RaceAudio()
+    return () => audioRef.current?.stop()
+  }, [])
+
+  useEffect(() => {
+    audioRef.current?.setEnabled(soundOn)
+  }, [soundOn])
+
+  const toggleSound = () => {
+    setSoundOn((prev) => {
+      saveSettings({ sound: !prev })
+      return !prev
+    })
+  }
+
   // Preload the saved car bitmap once
   useEffect(() => {
     const image = new Image()
@@ -45,9 +67,11 @@ export default function Race() {
   useEffect(() => {
     if (countdown === 0) {
       setShowGo(true)
+      audioRef.current?.countdownBeep(true)
       const timer = setTimeout(() => setShowGo(false), GO_FLASH_MS)
       return () => clearTimeout(timer)
     }
+    audioRef.current?.countdownBeep(false)
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), COUNTDOWN_TICK_MS)
     return () => clearTimeout(timer)
   }, [countdown])
@@ -62,7 +86,18 @@ export default function Race() {
   const { hud, restart } = useRaceLoop(canvasRef, courseCheck?.ok ? course : null, carImage, {
     racing,
     onFinish: handleFinish,
+    settings,
+    audioRef,
   })
+
+  // Split chip: show each checkpoint delta briefly, keyed by split id
+  const [visibleSplit, setVisibleSplit] = useState(null)
+  useEffect(() => {
+    if (!hud.split) return undefined
+    setVisibleSplit(hud.split)
+    const timer = setTimeout(() => setVisibleSplit(null), 1500)
+    return () => clearTimeout(timer)
+  }, [hud.split])
 
   // Escape pauses once the race is underway
   useEffect(() => {
@@ -112,6 +147,23 @@ export default function Race() {
         <div className="wr-hud-badge">
           CHECK {hud.nextCheckpoint}/{hud.checkpointTotal}
         </div>
+        {visibleSplit && (
+          <span
+            className={`wr-split-chip ${visibleSplit.deltaMs <= 0 ? 'wr-split-ahead' : 'wr-split-behind'}`}
+            role="status"
+          >
+            {visibleSplit.deltaMs <= 0 ? '−' : '+'}
+            {(Math.abs(visibleSplit.deltaMs) / 1000).toFixed(1)}s
+          </span>
+        )}
+        <Button
+          variant="outline-secondary"
+          onClick={toggleSound}
+          aria-pressed={soundOn}
+          aria-label={soundOn ? 'Mute sound' : 'Unmute sound'}
+        >
+          {soundOn ? '🔊' : '🔇'}
+        </Button>
         <Button
           variant="outline-secondary"
           onClick={() => setPaused(true)}
@@ -122,7 +174,7 @@ export default function Race() {
       </div>
 
       <Alert variant="light" className="py-2 mb-2 d-none d-md-block">
-        Steer with ← ↑ → ↓ (or WASD). ↑ accelerates, ↓ brakes/reverses. Esc pauses.
+        Steer with ← ↑ → ↓ (or WASD). Space = handbrake drift. Esc pauses.
         Hit the glowing checkpoints in order — 3 laps to finish!
       </Alert>
       <Alert variant="warning" className="py-2 mb-2 d-md-none">
