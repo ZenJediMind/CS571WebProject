@@ -7,7 +7,7 @@ import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PiecePreview from '../components/PiecePreview'
 import { GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
@@ -83,8 +83,6 @@ function rotateCell(grid, row, col) {
 
 function editorReducer(state, action) {
   switch (action.type) {
-    case 'load':
-      return { grid: action.grid, undo: [], redo: [], dirty: false }
     case 'edit': {
       const grid = action.transform(state.grid)
       if (grid === state.grid) return state
@@ -120,7 +118,17 @@ function editorReducer(state, action) {
   }
 }
 
+/**
+ * Remount the editor per navigation so "Build" always hands out a fresh
+ * draft and switching courses fully resets name/history state.
+ */
 export default function CourseBuilder() {
+  const { courseId } = useParams()
+  const location = useLocation()
+  return <CourseBuilderEditor key={courseId === 'new' ? location.key : courseId} />
+}
+
+function CourseBuilderEditor() {
   const { courseId } = useParams()
   const navigate = useNavigate()
   const canvasRef = useRef(null)
@@ -147,14 +155,6 @@ export default function CourseBuilder() {
     () => (editor.grid ? validateCourse(editor.grid) : null),
     [editor.grid],
   )
-
-  // Route param can change without a remount (e.g. Copy & Edit) — reload the editor
-  useEffect(() => {
-    if (course && !course.isTemplate) {
-      dispatch({ type: 'load', grid: course.grid })
-      setName(course.name)
-    }
-  }, [course])
 
   /* ---------- canvas drawing ---------- */
   useEffect(() => {

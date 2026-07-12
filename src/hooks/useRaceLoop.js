@@ -88,7 +88,8 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish }) {
         if (racing && dt > 0) stepRace(state, inputsRef.current, dt)
         drawFrame(ctx, background, state, carImage)
 
-        if (timestamp >= hudDueAt) {
+        // HUD only changes while simulating — skip re-renders when paused
+        if (racing && timestamp >= hudDueAt) {
           hudDueAt = timestamp + HUD_INTERVAL_MS
           setHud(hudSnapshot(state))
         }
