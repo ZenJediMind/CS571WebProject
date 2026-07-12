@@ -149,6 +149,7 @@ function CourseBuilderEditor() {
   const [showGridLines, setShowGridLines] = useState(true)
   const [hoverCell, setHoverCell] = useState(null)
   const [cursorCell, setCursorCell] = useState(null)
+  const [saveError, setSaveError] = useState(false)
   const paintedCellRef = useRef(null) // last cell touched during a drag
 
   const validation = useMemo(
@@ -300,17 +301,22 @@ function CourseBuilderEditor() {
   /* ---------- top actions ---------- */
   const persistCourse = () => {
     const saved = saveCourse({ ...course, name: name.trim() || 'Untitled Course', grid: editor.grid })
+    if (!saved) {
+      setSaveError(true)
+      return null
+    }
+    setSaveError(false)
     dispatch({ type: 'saved' })
     return saved
   }
 
   const handleSave = () => {
-    persistCourse()
-    navigate('/')
+    if (persistCourse()) navigate('/')
   }
 
   const handleTestDrive = () => {
     const saved = persistCourse()
+    if (!saved) return
     // Swap the /build/new history entry for the saved id so Back returns here
     if (courseId === 'new') navigate(`/build/${saved.id}`, { replace: true })
     navigate(`/race/${saved.id}`)
@@ -342,11 +348,21 @@ function CourseBuilderEditor() {
           </span>
           <Button
             variant="primary"
-            onClick={() => navigate(`/build/${copyCourse(course.id).id}`)}
+            onClick={() => {
+              const copy = copyCourse(course.id)
+              if (copy) navigate(`/build/${copy.id}`)
+              else setSaveError(true)
+            }}
           >
             Copy &amp; Edit
           </Button>
         </Alert>
+        {saveError && (
+          <Alert variant="danger" dismissible onClose={() => setSaveError(false)} className="mt-3">
+            Couldn't save — browser storage is full or blocked. Your track is still here;
+            free up space (or leave private browsing) and try again.
+          </Alert>
+        )}
       </Container>
     )
   }
@@ -382,6 +398,13 @@ function CourseBuilderEditor() {
         </Col>
       </Row>
       <div className="wr-checker mb-3" aria-hidden="true" />
+
+      {saveError && (
+        <Alert variant="danger" dismissible onClose={() => setSaveError(false)}>
+          Couldn't save — browser storage is full or blocked. Your track is still here;
+          free up space (or leave private browsing) and try again.
+        </Alert>
+      )}
 
       <Alert variant="light" className="py-2">
         Pick a piece, then click or drag on the grass to lay track. Click a placed piece

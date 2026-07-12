@@ -10,10 +10,12 @@ export function readKey(key, fallback) {
   }
 }
 
+/** Returns true when the value persisted; false when storage rejected it. */
 export function writeKey(key, value) {
   try {
     localStorage.setItem(`${NAMESPACE}.${key}`, JSON.stringify(value))
+    return true
   } catch {
-    // QuotaExceeded / private mode — session continues with in-memory state
+    return false // quota exceeded, private mode, or storage disabled
   }
 }

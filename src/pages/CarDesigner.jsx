@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
+import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
 import Col from 'react-bootstrap/Col'
@@ -92,11 +93,16 @@ export default function CarDesigner() {
   const [color, setColor] = useState('#c5050c')
   const [brushSize, setBrushSize] = useState(BRUSH_SIZES[1].size)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   const dirty = paint.history.length > 0 && !saved
 
   const handleSave = () => {
-    savePlayerCar(paint.current)
+    if (!savePlayerCar(paint.current)) {
+      setSaveError(true)
+      return
+    }
+    setSaveError(false)
     setSaved(true)
     navigate('/')
   }
@@ -135,6 +141,13 @@ export default function CarDesigner() {
         </Col>
       </Row>
       <div className="wr-checker mb-2" aria-hidden="true" />
+
+      {saveError && (
+        <Alert variant="danger" dismissible onClose={() => setSaveError(false)}>
+          Couldn't save — browser storage is full or blocked. Your drawing is still here;
+          free up space (or leave private browsing) and try again.
+        </Alert>
+      )}
 
       <nav aria-label="Decorative menu bar (not functional)" className="mb-3">
         {MENU_STUBS.map((menu) => (

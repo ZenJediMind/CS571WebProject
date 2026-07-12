@@ -15,5 +15,5 @@ export function loadPlayerCar() {
 }
 
 export function savePlayerCar(imageDataUrl) {
-  writeKey(CAR_KEY, { imageDataUrl })
+  return writeKey(CAR_KEY, { imageDataUrl })
 }

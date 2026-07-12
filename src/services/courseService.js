@@ -45,7 +45,7 @@ export function saveCourse(course) {
   }
   const toStore = { ...course, votes: 0, isTemplate: false }
   const others = readUserCourses().filter((existing) => existing.id !== course.id)
-  writeKey(COURSES_KEY, [...others, toStore])
+  if (!writeKey(COURSES_KEY, [...others, toStore])) return null
   return toStore
 }
 
