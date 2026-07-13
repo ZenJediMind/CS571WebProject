@@ -25,6 +25,8 @@ function makeCtx() {
     fill: noop, stroke: noop, save: noop, restore: noop, translate: noop,
     rotate: noop, scale: noop, setLineDash: noop, roundRect: noop,
     fillText: noop, strokeText: noop, clearRect: noop, drawImage: noop,
+    createLinearGradient: () => ({ addColorStop: noop }),
+    createRadialGradient: () => ({ addColorStop: noop }),
   }
 }
 
