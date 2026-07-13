@@ -3,6 +3,7 @@
 import { readKey, writeKey } from './storage'
 import { createEmptyGrid } from '../game/courseModel'
 import { TEMPLATE_COURSES } from '../game/templates'
+import { DEFAULT_THEME_ID } from '../game/themes'
 
 const COURSES_KEY = 'courses'
 const VOTES_KEY = 'votes'
@@ -49,6 +50,7 @@ export function createDraftCourse() {
     id: `crs-${Date.now().toString(36)}`,
     name: 'Untitled Course',
     grid: createEmptyGrid(),
+    theme: DEFAULT_THEME_ID,
     votes: 0,
     author: 'You',
     isTemplate: false,
@@ -63,6 +65,7 @@ export function copyCourse(id) {
     ...createDraftCourse(),
     name: `${source.name} (Copy)`,
     grid: cloneGrid(source.grid),
+    theme: source.theme ?? DEFAULT_THEME_ID,
   })
 }
 

@@ -11,12 +11,12 @@ export function stampCells(grid, cells) {
   return grid
 }
 
-function courseFromCells(id, name, cells) {
+function courseFromCells(id, name, cells, theme = 'circuit') {
   const grid = stampCells(createEmptyGrid(), cells)
   const check = validateCourse(grid)
   if (!check.ok) throw new Error(`Template ${id} invalid: ${check.error}`)
   return {
-    id, name, grid, votes: 0,
+    id, name, grid, theme, votes: 0,
     author: 'Wisconsin Racer', isTemplate: true, createdAt: 0,
   }
 }
@@ -133,10 +133,10 @@ const SPA_CELLS = [
 ]
 
 export const TEMPLATE_COURSES = [
-  courseFromCells('tpl-ring-road', 'Ring Road', RING_CELLS),
-  courseFromCells('tpl-capitol-loop', 'Capitol Loop', CAPITOL_CELLS),
-  courseFromCells('tpl-mad-town-gp', 'Mad Town GP', MAD_TOWN_CELLS),
-  courseFromCells('tpl-spa-francorchamps', 'Circuit de Spa-Francorchamps', SPA_CELLS),
+  courseFromCells('tpl-ring-road', 'Ring Road', RING_CELLS, 'rally'),
+  courseFromCells('tpl-capitol-loop', 'Capitol Loop', CAPITOL_CELLS, 'night'),
+  courseFromCells('tpl-mad-town-gp', 'Mad Town GP', MAD_TOWN_CELLS, 'night'),
+  courseFromCells('tpl-spa-francorchamps', 'Circuit de Spa-Francorchamps', SPA_CELLS, 'circuit'),
 ]
 
 /**
