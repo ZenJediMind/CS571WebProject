@@ -52,8 +52,8 @@ test('race state carries the theme grip (default circuit = 1.0)', () => {
 })
 
 test('lower grip reduces steering authority', () => {
-  const highGrip = createRaceState({ ...TEMPLATE_COURSES[0], theme: 'circuit' })   // 1.0
-  const lowGrip = createRaceState({ ...TEMPLATE_COURSES[0], theme: 'motocross' })  // 0.82
+  const highGrip = createRaceState({ ...TEMPLATE_COURSES[0], theme: 'circuit' })
+  const lowGrip = createRaceState({ ...TEMPLATE_COURSES[0], theme: 'motocross' })
   const startHeading = highGrip.heading
   const turn = { up: true, right: true }
   for (let i = 0; i < 30; i++) {

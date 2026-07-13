@@ -9,10 +9,6 @@ export const COURSE_WIDTH = GRID_COLS * CELL_SIZE // 1024
 export const COURSE_HEIGHT = GRID_ROWS * CELL_SIZE // 640
 
 const COLORS = {
-  road: '#4a4d55',
-  curbRed: '#c5050c',
-  curbWhite: '#f2f2f2',
-  dash: '#e8e8e8',
   boost: '#f7a600',
   obstacleSand: '#c8b273',
   barrierOrange: '#e67e22',
