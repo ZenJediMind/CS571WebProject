@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PiecePreview from '../components/PiecePreview'
 import { createEmptyGrid, GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
+import { THEMES, getTheme, DEFAULT_THEME_ID } from '../game/themes'
 import { copyCourse, createDraftCourse, getCourse, saveCourse } from '../services/courseService'
 
 const BUILDER_CELL = 64
@@ -149,6 +150,7 @@ function CourseBuilderEditor() {
     dirty: false,
   }))
   const [stamp, setStamp] = useState({ piece: PIECES.STRAIGHT, rotation: 0 })
+  const [themeId, setThemeId] = useState(course?.theme ?? DEFAULT_THEME_ID)
   const [showGridLines, setShowGridLines] = useState(true)
   const [hoverCell, setHoverCell] = useState(null)
   const [cursorCell, setCursorCell] = useState(null)
@@ -159,14 +161,15 @@ function CourseBuilderEditor() {
     () => (editor.grid ? validateCourse(editor.grid) : null),
     [editor.grid],
   )
-  const hasUnsavedChanges = editor.dirty || name !== course?.name
+  const hasUnsavedChanges = editor.dirty || name !== course?.name || themeId !== (course?.theme ?? DEFAULT_THEME_ID)
 
   /* ---------- canvas drawing ---------- */
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !editor.grid) return
     const ctx = canvas.getContext('2d')
-    drawCourseInto(ctx, editor.grid, BUILDER_CELL)
+    const theme = getTheme(themeId)
+    drawCourseInto(ctx, editor.grid, BUILDER_CELL, theme)
 
     if (showGridLines) {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)'
@@ -191,7 +194,7 @@ function CourseBuilderEditor() {
       ctx.globalAlpha = 0.55
       drawTrackPiece(
         ctx, stamp.piece, stamp.rotation,
-        hoverCell.col * BUILDER_CELL, hoverCell.row * BUILDER_CELL, BUILDER_CELL,
+        hoverCell.col * BUILDER_CELL, hoverCell.row * BUILDER_CELL, BUILDER_CELL, theme,
       )
       ctx.restore()
     }
@@ -213,7 +216,7 @@ function CourseBuilderEditor() {
         BUILDER_CELL - 4, BUILDER_CELL - 4,
       )
     }
-  }, [editor.grid, stamp, hoverCell, cursorCell, showGridLines])
+  }, [editor.grid, stamp, hoverCell, cursorCell, showGridLines, themeId])
 
   /* ---------- edits ---------- */
   const applyAt = useCallback((row, col, { allowRotate }) => {
@@ -304,7 +307,7 @@ function CourseBuilderEditor() {
 
   /* ---------- top actions ---------- */
   const persistCourse = () => {
-    const saved = saveCourse({ ...course, name: name.trim() || 'Untitled Course', grid: editor.grid })
+    const saved = saveCourse({ ...course, name: name.trim() || 'Untitled Course', grid: editor.grid, theme: themeId })
     if (!saved) {
       setSaveError(true)
       return null
@@ -389,6 +392,21 @@ function CourseBuilderEditor() {
             placeholder="Course name"
             maxLength={40}
           />
+        </Col>
+        <Col xs={12} sm="auto">
+          <Form.Label htmlFor="course-setting" visuallyHidden>Setting</Form.Label>
+          <Form.Select
+            id="course-setting"
+            aria-label="Track setting"
+            value={themeId}
+            onChange={(event) => setThemeId(event.target.value)}
+          >
+            {THEMES.map((theme) => (
+              <option key={theme.id} value={theme.id}>
+                {theme.emoji} {theme.name}
+              </option>
+            ))}
+          </Form.Select>
         </Col>
         <Col xs="auto">
           <Button variant="success" onClick={handleTestDrive} disabled={!validation?.ok}>
