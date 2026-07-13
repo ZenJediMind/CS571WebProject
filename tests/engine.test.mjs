@@ -5,6 +5,7 @@ import { loadGameModule } from './helpers.mjs'
 const { TEMPLATE_COURSES } = await loadGameModule('templates')
 const { createRaceState, stepRace } = await loadGameModule('engine')
 const { createAutopilotCursor, autopilotInputs } = await loadGameModule('autopilot')
+const { getTheme } = await loadGameModule('themes')
 
 function runToFinish(course, maxSimSeconds = 180) {
   const state = createRaceState(course)
@@ -43,4 +44,23 @@ test('a huge frame gap is clamped, not fast-forwarded', () => {
   const state = createRaceState(TEMPLATE_COURSES[0])
   stepRace(state, { up: true }, 5)
   assert.ok(Math.abs(state.elapsedMs - 250) < 1e-6)
+})
+
+test('race state carries the theme grip (default circuit = 1.0)', () => {
+  const state = createRaceState(TEMPLATE_COURSES[0])
+  assert.equal(state.grip, getTheme(TEMPLATE_COURSES[0].theme).grip)
+})
+
+test('lower grip reduces steering authority', () => {
+  const highGrip = createRaceState({ ...TEMPLATE_COURSES[0], theme: 'circuit' })   // 1.0
+  const lowGrip = createRaceState({ ...TEMPLATE_COURSES[0], theme: 'motocross' })  // 0.82
+  const startHeading = highGrip.heading
+  const turn = { up: true, right: true }
+  for (let i = 0; i < 30; i++) {
+    stepRace(highGrip, turn, 1 / 60)
+    stepRace(lowGrip, turn, 1 / 60)
+  }
+  const highTurned = Math.abs(highGrip.heading - startHeading)
+  const lowTurned = Math.abs(lowGrip.heading - startHeading)
+  assert.ok(highTurned > lowTurned, `expected ${highTurned} > ${lowTurned}`)
 })

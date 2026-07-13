@@ -1,6 +1,7 @@
 // Pure race simulation. No DOM, no timers — state advances only through
 // stepRace(state, inputs, dtSeconds), so identical inputs replay identically.
 import { CELL_SIZE, PIECES, derivePath, isTrackCell } from './courseModel'
+import { getTheme } from './themes'
 
 export const TOTAL_LAPS = 3
 export const MAX_SPEED = 320 // px/s
@@ -37,6 +38,8 @@ export function createRaceState(course, { maxSpeedFactor = 1 } = {}) {
   const path = derivePath(course.grid)
   if (!path) throw new Error(`Course ${course.id} has no drivable loop.`)
 
+  const grip = getTheme(course.theme).grip
+
   const checkpoints = path
     .filter((_, index) => index > 0 && index % CHECKPOINT_SPACING === 0)
     .map((cell) => ({ ...cell, key: cellKey(cell.row, cell.col) }))
@@ -60,6 +63,7 @@ export function createRaceState(course, { maxSpeedFactor = 1 } = {}) {
     finished: false,
     currentCellKey: cellKey(path[0].row, path[0].col),
     maxSpeedFactor,
+    grip,
     airborneMs: 0,
     lastSafe: { x: startCenter.x, y: startCenter.y },
     boostCount: 0,
@@ -98,7 +102,8 @@ function applySteering(state, inputs, dt) {
   if (speedRatio === 0) return
   const direction = (inputs.left ? -1 : 0) + (inputs.right ? 1 : 0)
   const reverseFactor = state.speed < 0 ? -1 : 1
-  const authority = (state.onOil ? OIL_STEER_FACTOR : 1)
+  const authority = state.grip
+    * (state.onOil ? OIL_STEER_FACTOR : 1)
     * (state.drifting ? HANDBRAKE_TURN_MULTIPLIER : 1)
   state.heading += direction * reverseFactor * TURN_RATE * authority * speedRatio * dt
 }
