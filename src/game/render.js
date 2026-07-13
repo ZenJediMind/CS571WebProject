@@ -3,13 +3,12 @@
 // cheddar boost chevrons, barrier obstacles, blue pit box.
 import { CELL_SIZE, GRID_COLS, GRID_ROWS, PIECES } from './courseModel'
 import { mulberry32 } from './rng'
+import { getTheme, DEFAULT_THEME_ID } from './themes'
 
 export const COURSE_WIDTH = GRID_COLS * CELL_SIZE // 1024
 export const COURSE_HEIGHT = GRID_ROWS * CELL_SIZE // 640
 
 const COLORS = {
-  grassLight: '#3a7d2c',
-  grassDark: '#346f27',
   road: '#4a4d55',
   curbRed: '#c5050c',
   curbWhite: '#f2f2f2',
@@ -56,8 +55,8 @@ function drawCheckerBand(ctx, roadWidth, squares = 8, rows = 2) {
 }
 
 /** Arrow ahead of the start line pointing the race direction (local north). */
-function drawStartArrow(ctx, half) {
-  ctx.fillStyle = COLORS.dash
+function drawStartArrow(ctx, half, track) {
+  ctx.fillStyle = track.dash
   ctx.beginPath()
   ctx.moveTo(0, -half * 0.78)
   ctx.lineTo(-half * 0.22, -half * 0.46)
@@ -102,7 +101,7 @@ function drawObstacleCell(ctx, half) {
  * Draw one oriented piece with its top-left corner at (x, y).
  * Works at any cellSize, so the builder and thumbnails reuse it.
  */
-export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
+export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize, theme = getTheme(DEFAULT_THEME_ID)) {
   const half = cellSize / 2
   ctx.save()
   ctx.translate(x + half, y + half)
@@ -115,28 +114,35 @@ export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
   }
 
   const roadWidth = cellSize * ROAD_WIDTH_RATIO
+  const track = theme.track
+
+  // Run-off / shoulder ribbon (gravel trap, dirt margin, etc.) hugging the piece
+  tracePieceCenterline(ctx, piece, half)
+  ctx.strokeStyle = track.margin
+  ctx.lineWidth = roadWidth + cellSize * 0.28
+  ctx.stroke()
 
   // Curbs: a slightly wider red ribbon under the asphalt reads as edge striping
   tracePieceCenterline(ctx, piece, half)
-  ctx.strokeStyle = COLORS.curbRed
+  ctx.strokeStyle = track.curbRed
   ctx.lineWidth = roadWidth + cellSize * 0.1
   ctx.setLineDash([cellSize * 0.18, cellSize * 0.12])
   ctx.stroke()
   ctx.setLineDash([])
-  ctx.strokeStyle = COLORS.curbWhite
+  ctx.strokeStyle = track.curbWhite
   ctx.lineWidth = roadWidth + cellSize * 0.04
   ctx.stroke()
 
   // Asphalt
   tracePieceCenterline(ctx, piece, half)
-  ctx.strokeStyle = COLORS.road
+  ctx.strokeStyle = track.road
   ctx.lineWidth = roadWidth
   ctx.stroke()
 
   // Dashed centerline (skip on specials that draw their own markings)
   if (piece !== PIECES.START && piece !== PIECES.BOOST && piece !== PIECES.RAMP) {
     tracePieceCenterline(ctx, piece, half)
-    ctx.strokeStyle = COLORS.dash
+    ctx.strokeStyle = track.dash
     ctx.lineWidth = Math.max(2, cellSize * 0.04)
     ctx.setLineDash(DASH_PATTERN_RATIO.map((ratio) => ratio * cellSize))
     ctx.stroke()
@@ -145,7 +151,7 @@ export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
 
   if (piece === PIECES.START) {
     drawCheckerBand(ctx, roadWidth)
-    drawStartArrow(ctx, half)
+    drawStartArrow(ctx, half, track)
   }
   if (piece === PIECES.BOOST) drawBoostChevrons(ctx, half)
   if (piece === PIECES.PIT) {
@@ -189,20 +195,11 @@ export function drawTrackPiece(ctx, piece, rotation, x, y, cellSize) {
   ctx.restore()
 }
 
-export function drawGrass(ctx, width, height, cellSize) {
-  ctx.fillStyle = COLORS.grassLight
-  ctx.fillRect(0, 0, width, height)
-  ctx.fillStyle = COLORS.grassDark
-  for (let row = 0; row < Math.ceil(height / cellSize); row += 2) {
-    ctx.fillRect(0, row * cellSize, width, cellSize)
-  }
-}
-
-export function drawCourseInto(ctx, grid, cellSize) {
-  drawGrass(ctx, grid[0].length * cellSize, grid.length * cellSize, cellSize)
+export function drawCourseInto(ctx, grid, cellSize, theme = getTheme(DEFAULT_THEME_ID)) {
+  theme.drawTerrain(ctx, grid[0].length * cellSize, grid.length * cellSize, cellSize)
   grid.forEach((cells, row) => {
     cells.forEach((cell, col) => {
-      if (cell) drawTrackPiece(ctx, cell.piece, cell.rotation, col * cellSize, row * cellSize, cellSize)
+      if (cell) drawTrackPiece(ctx, cell.piece, cell.rotation, col * cellSize, row * cellSize, cellSize, theme)
     })
   })
 }
@@ -212,14 +209,14 @@ export function createCourseBackground(course) {
   const canvas = document.createElement('canvas')
   canvas.width = COURSE_WIDTH
   canvas.height = COURSE_HEIGHT
-  drawCourseInto(canvas.getContext('2d'), course.grid, CELL_SIZE)
+  drawCourseInto(canvas.getContext('2d'), course.grid, CELL_SIZE, getTheme(course.theme))
   return canvas
 }
 
 export function drawCourseThumbnail(canvas, course) {
   const cellSize = canvas.width / GRID_COLS
   canvas.height = cellSize * GRID_ROWS
-  drawCourseInto(canvas.getContext('2d'), course.grid, cellSize)
+  drawCourseInto(canvas.getContext('2d'), course.grid, cellSize, getTheme(course.theme))
 }
 
 const CAR_DRAW_SIZE = 48

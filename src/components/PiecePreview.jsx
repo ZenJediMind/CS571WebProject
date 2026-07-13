@@ -1,14 +1,16 @@
 import { useEffect, useRef } from 'react'
-import { drawGrass, drawTrackPiece } from '../game/render'
+import { getTheme } from '../game/themes'
+import { drawTrackPiece } from '../game/render'
 
 /** Small canvas swatch of one oriented track piece, used by the palette. */
 export default function PiecePreview({ piece, rotation = 0, size = 44, label }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
+    const theme = getTheme('circuit')
     const ctx = canvasRef.current.getContext('2d')
-    drawGrass(ctx, size, size, size)
-    drawTrackPiece(ctx, piece, rotation, 0, 0, size)
+    theme.drawTerrain(ctx, size, size, size)
+    drawTrackPiece(ctx, piece, rotation, 0, 0, size, theme)
   }, [piece, rotation, size])
 
   // Decorative when unlabeled (the enclosing button carries the text label)
