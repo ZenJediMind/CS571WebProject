@@ -21,15 +21,10 @@ function cloneGrid(grid) {
   return grid.map((row) => row.map((cell) => (cell ? { ...cell } : null)))
 }
 
-export function withHydratedVotes(course) {
-  if (!course) return null
-  const votes = readKey(VOTES_KEY, {})
-  return { ...course, votes: (course.votes ?? 0) + (votes[course.id] ?? 0) }
-}
-
 export function listCourses() {
+  const votes = readKey(VOTES_KEY, {})
   return [...TEMPLATE_COURSES, ...readUserCourses()]
-    .map(withHydratedVotes)
+    .map((course) => ({ ...course, votes: (course.votes ?? 0) + (votes[course.id] ?? 0) }))
     .sort((a, b) => b.votes - a.votes)
 }
 

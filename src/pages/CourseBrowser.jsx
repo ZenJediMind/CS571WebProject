@@ -35,9 +35,9 @@ export default function CourseBrowser() {
 
   return (
     <Container className="py-4">
-      <PageHeader title="Community Courses" />
+      <PageHeader title="Courses" />
       <p className="text-secondary">
-        Vote for your favorites, race them, or copy one as a starting point for your own track.
+        Browse built-in and locally saved courses. Votes and edits stay on this device.
       </p>
       <Row xs={1} sm={2} lg={3} className="g-3">
         {courses.map((course) => (

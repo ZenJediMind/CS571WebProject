@@ -7,7 +7,6 @@ import { useDraftCourse } from '../hooks/useDraftCourse'
 
 const SECONDARY_LINKS = [
   { label: 'Draw Car', to: '/car' },
-  { label: 'Browse Courses', to: '/browse' },
   { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Invite Friends', to: '/invite' },
   { label: 'Settings', to: '/settings' },

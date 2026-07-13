@@ -4,7 +4,7 @@ import { renderCarTemplateToDataUrl } from '../game/templates'
 
 const CAR_KEY = 'playerCar'
 
-export function defaultCarDataUrl() {
+function defaultCarDataUrl() {
   return renderCarTemplateToDataUrl('car-classic')
 }
 

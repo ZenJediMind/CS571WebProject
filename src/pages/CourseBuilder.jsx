@@ -9,7 +9,7 @@ import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PiecePreview from '../components/PiecePreview'
-import { GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
+import { createEmptyGrid, GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
 import { copyCourse, createDraftCourse, getCourse, saveCourse } from '../services/courseService'
 
@@ -18,6 +18,7 @@ const CANVAS_WIDTH = GRID_COLS * BUILDER_CELL
 const CANVAS_HEIGHT = GRID_ROWS * BUILDER_CELL
 const HISTORY_LIMIT = 50
 const ERASER = 'eraser'
+const sameCell = (a, b) => a?.row === b?.row && a?.col === b?.col
 
 const PALETTE_SECTIONS = [
   {
@@ -158,6 +159,7 @@ function CourseBuilderEditor() {
     () => (editor.grid ? validateCourse(editor.grid) : null),
     [editor.grid],
   )
+  const hasUnsavedChanges = editor.dirty || name !== course?.name
 
   /* ---------- canvas drawing ---------- */
   useEffect(() => {
@@ -258,14 +260,14 @@ function CourseBuilderEditor() {
 
   const handlePointerMove = (event) => {
     const cell = cellFromPointer(event)
-    setHoverCell(cell)
+    setHoverCell((current) => sameCell(current, cell) ? current : cell)
     const painted = paintedCellRef.current
     if (!painted || !cell) return
     if (event.buttons === 0) {
       paintedCellRef.current = null
       return
     }
-    if (cell.row !== painted.row || cell.col !== painted.col) {
+    if (!sameCell(cell, painted)) {
       paintedCellRef.current = cell
       applyAt(cell.row, cell.col, { allowRotate: false })
     }
@@ -325,7 +327,7 @@ function CourseBuilderEditor() {
   }
 
   const handleBack = () => {
-    if (!editor.dirty || window.confirm('Leave without saving? Unsaved track changes will be lost.')) {
+    if (!hasUnsavedChanges || window.confirm('Leave without saving? Unsaved track changes will be lost.')) {
       navigate('/')
     }
   }
@@ -482,7 +484,7 @@ function CourseBuilderEditor() {
               size="sm"
               onClick={() => {
                 if (window.confirm('Clear the whole track?')) {
-                  dispatch({ type: 'edit', transform: (grid) => grid.map((cells) => cells.map(() => null)) })
+                  dispatch({ type: 'edit', transform: createEmptyGrid })
                 }
               }}
             >

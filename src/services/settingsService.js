@@ -1,4 +1,4 @@
-import { readKey, writeKey } from './storage'
+import { readKey, writeKey } from './storage.js'
 
 const SETTINGS_KEY = 'settings'
 
@@ -12,6 +12,5 @@ export function getSettings() {
 
 export function saveSettings(partial) {
   const next = { ...getSettings(), ...partial }
-  writeKey(SETTINGS_KEY, next)
-  return next
+  return writeKey(SETTINGS_KEY, next) ? next : null
 }

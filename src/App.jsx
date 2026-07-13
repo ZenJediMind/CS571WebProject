@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Outlet } from 'react-router-dom'
+import { HashRouter, Navigate, Routes, Route, Outlet, useParams } from 'react-router-dom'
 import AppNavbar from './components/AppNavbar'
 import Home from './pages/Home'
 import CourseBrowser from './pages/CourseBrowser'
@@ -19,6 +19,11 @@ function Layout() {
   )
 }
 
+function RaceRoute() {
+  const { courseId } = useParams()
+  return <Race key={courseId} />
+}
+
 export default function App() {
   return (
     <HashRouter>
@@ -28,11 +33,12 @@ export default function App() {
           <Route path="/browse" element={<CourseBrowser />} />
           <Route path="/build/:courseId" element={<CourseBuilder />} />
           <Route path="/car" element={<CarDesigner />} />
-          <Route path="/race/:courseId" element={<Race />} />
+          <Route path="/race/:courseId" element={<RaceRoute />} />
           <Route path="/results/:courseId" element={<Results />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/invite" element={<Invite />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </HashRouter>

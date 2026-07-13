@@ -3,7 +3,7 @@ AI Usage Disclosure — Wisconsin Racer (CS571 Web Project)
 
 Approximate share of AI-generated code: ~90%
 
-Tools used: Claude Code (Anthropic), working from the author's own design
+Tools used: Claude Code (Anthropic) and OpenAI Codex, working from the author's own design
 documents: the approved project proposal, the Figma low-fidelity prototype
 (prototype-design.md), and a detailed implementation plan written and
 reviewed by the author (specs/2026-07-11-wisconsin-racer-game-plan.md).

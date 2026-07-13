@@ -1,9 +1,9 @@
 // Ghost cars: live autopilot rivals pace-matched to leaderboard times, and
 // recording/playback of the player's best run. Pure — data is injected.
-import { createRaceState, stepRace, TOTAL_LAPS } from './engine'
+import { createRaceState, stepRace } from './engine'
 import { autopilotInputs, createAutopilotCursor } from './autopilot'
 
-export const RIVAL_GHOST_COLORS = ['#17a2b8', '#7d3c98']
+const RIVAL_GHOST_COLORS = ['#17a2b8', '#7d3c98']
 
 const GHOST_STEP_SECONDS = 1 / 60
 const PACE_FACTOR_MIN = 0.4
@@ -99,5 +99,3 @@ export function ghostPoseAt(recording, elapsedMs) {
   const delta = Math.atan2(Math.sin((h1 - h0) / 1000), Math.cos((h1 - h0) / 1000))
   return { x: lerp(x0, x1, t), y: lerp(y0, y1, t), heading: h0 / 1000 + delta * t }
 }
-
-export { TOTAL_LAPS }

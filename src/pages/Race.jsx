@@ -50,6 +50,7 @@ export default function Race() {
   }, [soundOn])
 
   const toggleSound = () => {
+    audioRef.current?.init()
     setSoundOn((prev) => {
       saveSettings({ sound: !prev })
       return !prev
@@ -99,10 +100,10 @@ export default function Race() {
     return () => clearTimeout(timer)
   }, [hud.split])
 
-  // Escape pauses once the race is underway
+  // One listener owns Escape; the modal's competing keyboard handler is disabled below.
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.code === 'Escape' && countdown === 0) setPaused((prev) => !prev)
+      if (event.code === 'Escape' && countdown === 0) setPaused((current) => !current)
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
@@ -201,7 +202,7 @@ export default function Race() {
         )}
       </div>
 
-      <Modal show={paused} onHide={() => setPaused(false)} centered>
+      <Modal show={paused} onHide={() => setPaused(false)} keyboard={false} centered>
         <Modal.Header closeButton>
           <Modal.Title>Paused</Modal.Title>
         </Modal.Header>

@@ -1,16 +1,45 @@
-# React + Vite
+# Wisconsin Racer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Wisconsin Racer is a client-only React racing game for CS571. Build a track,
+paint a car, race three laps, and compare results with deterministic simulated
+rivals. Courses, cars, settings, votes, ghosts, and scores persist in browser
+storage; no credentials or backend are used.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Use a current LTS release of Node.js and npm.
 
-## React Compiler
+```powershell
+npm ci
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Vite prints the local URL. Clearing site data resets local courses, cars,
+settings, ghosts, scores, and votes; built-in templates remain available.
 
-## Expanding the Oxlint configuration
+## Controls
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+- Arrow keys or WASD: steer, accelerate, and brake
+- Space: handbrake drift
+- Escape: pause
+- Course Builder: pointer or arrow keys; Enter/Space places, Delete erases, R rotates
+
+The car designer supports pointer drawing and keyboard-accessible car templates
+and color controls.
+
+## Verify and publish
+
+```powershell
+npm test
+npm run lint
+npm run build
+```
+
+`npm run build` writes the production site to `docs/` with the
+`/CS571WebProject/` base path. GitHub Pages publishes that committed directory.
+
+## Scope
+
+Rivals, leaderboards, votes, invite codes, and the lobby are deterministic
+single-browser simulations. They do not connect players or share data between
+devices. See `AI.txt` for the course-required AI usage disclosure.

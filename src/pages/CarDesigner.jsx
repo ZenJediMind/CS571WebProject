@@ -12,8 +12,6 @@ import { PAINT_TOOLS } from '../components/paintTools'
 import { CAR_CANVAS_SIZE, CAR_TEMPLATES, renderCarTemplateToDataUrl } from '../game/templates'
 import { loadPlayerCar, savePlayerCar } from '../services/carService'
 
-const MENU_STUBS = ['File', 'Edit', 'View', 'Image', 'Colors', 'Help']
-
 const TOOLBOX = [
   { tool: PAINT_TOOLS.PENCIL, icon: '✏️', label: 'Pencil' },
   { tool: PAINT_TOOLS.BRUSH, icon: '🖌️', label: 'Brush' },
@@ -148,14 +146,6 @@ export default function CarDesigner() {
           free up space (or leave private browsing) and try again.
         </Alert>
       )}
-
-      <nav aria-label="Decorative menu bar (not functional)" className="mb-3">
-        {MENU_STUBS.map((menu) => (
-          <Button key={menu} variant="link" size="sm" className="text-secondary" disabled>
-            {menu}
-          </Button>
-        ))}
-      </nav>
 
       <Row className="g-3">
         <Col md={3} lg={2}>

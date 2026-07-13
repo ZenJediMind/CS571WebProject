@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Alert from 'react-bootstrap/Alert'
 import Card from 'react-bootstrap/Card'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
@@ -6,19 +7,27 @@ import PageHeader from '../components/PageHeader'
 import { GHOST_MODES, getSettings, saveSettings } from '../services/settingsService'
 
 const GHOST_OPTIONS = [
-  { value: GHOST_MODES.BOTH, label: 'Rivals + my best lap', help: 'Race everyone at once.' },
-  { value: GHOST_MODES.RIVALS, label: 'Rivals only', help: 'Chase the leaderboard drivers on track.' },
+  { value: GHOST_MODES.BOTH, label: 'Rivals + my best lap', help: 'Race simulated rivals and your recording.' },
+  { value: GHOST_MODES.RIVALS, label: 'Rivals only', help: 'Chase computer-driven rivals on track.' },
   { value: GHOST_MODES.BEST, label: 'My best lap only', help: 'Classic time-trial ghost of your own record.' },
   { value: GHOST_MODES.OFF, label: 'No ghosts', help: 'Just you and the clock.' },
 ]
 
 export default function Settings() {
   const [settings, setSettings] = useState(() => getSettings())
-  const update = (partial) => setSettings(saveSettings(partial))
+  const [saveError, setSaveError] = useState(false)
+  const update = (partial) => {
+    const saved = saveSettings(partial)
+    setSaveError(!saved)
+    if (saved) setSettings(saved)
+  }
 
   return (
     <Container className="py-4">
       <PageHeader title="Settings" />
+      {saveError && (
+        <Alert variant="danger">Couldn't save because browser storage is full or blocked.</Alert>
+      )}
       <Card className="mb-3" style={{ maxWidth: '32rem' }}>
         <Card.Header className="text-uppercase small fw-bold">Ghost cars on track</Card.Header>
         <Card.Body>

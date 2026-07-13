@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
@@ -39,6 +40,9 @@ export default function Invite() {
       <PageHeader title="Invite Friends" />
       <Row className="justify-content-center">
         <Col md={8} lg={6}>
+          <Alert variant="info">
+            Demo lobby: invite codes and joined friends are simulated on this device.
+          </Alert>
           <Card className="mb-3">
             <Card.Body>
               <Form.Label htmlFor="invite-code">

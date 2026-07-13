@@ -91,6 +91,10 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
     const setInput = (pressed) => (event) => {
       const control = KEY_BINDINGS[event.code]
       if (!control) return
+      if (!racing) {
+        inputsRef.current[control] = false
+        return
+      }
       event.preventDefault()
       inputsRef.current[control] = pressed
       if (pressed) audioRef.current?.init() // user gesture: safe to start audio
@@ -103,7 +107,7 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [audioRef])
+  }, [audioRef, racing])
 
   // The render/simulation loop — only animates while racing
   useEffect(() => {
@@ -120,7 +124,7 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
         marks: marksRef.current,
         state,
         carImage,
-        bestGhostPose: racing && bestGhostRef.current
+        bestGhostPose: bestGhostRef.current
           ? ghostPoseAt(bestGhostRef.current, state.elapsedMs)
           : null,
         rivalGhosts: rivalGhostsRef.current,
@@ -154,7 +158,7 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
 
           audioRef.current?.update(
             Math.abs(state.speed) / (MAX_SPEED * 1.25),
-            state.drifting || state.onOil,
+            state.drifting || (state.onOil && Math.abs(state.speed) > OIL_SKID_MIN_SPEED),
           )
 
           if (state.boostCount !== lastBoostCountRef.current) {
