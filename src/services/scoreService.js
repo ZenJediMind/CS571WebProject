@@ -62,14 +62,17 @@ export function getTotalPoints() {
 export function recordTime(courseId, ms) {
   const beatenRivals = getRivalTimes(courseId).filter((rival) => ms < rival.ms)
   const previousBest = getBestTime(courseId)
-  const newBest = previousBest === null || ms < previousBest
+  const wouldBeNewBest = previousBest === null || ms < previousBest
 
-  if (newBest) {
-    writeKey(BEST_TIMES_KEY, { ...readBestTimes(), [courseId]: ms })
+  // Only claim a new best (and its bonus points) when the best-time write succeeds.
+  let newBest = false
+  if (wouldBeNewBest) {
+    newBest = writeKey(BEST_TIMES_KEY, { ...readBestTimes(), [courseId]: ms })
   }
 
   const pointsEarned = beatenRivals.length * POINTS_PER_RIVAL_BEATEN
     + (newBest ? POINTS_PER_NEW_BEST : 0)
+  // Points write may still fail; award info above remains accurate for the UI.
   writeKey(POINTS_KEY, getTotalPoints() + pointsEarned)
 
   return { pointsEarned, newBest, beatenRivals, previousBest }

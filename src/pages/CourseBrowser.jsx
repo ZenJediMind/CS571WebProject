@@ -12,6 +12,7 @@ export default function CourseBrowser() {
   const navigate = useNavigate()
   const [courses, setCourses] = useState([])
   const [copyError, setCopyError] = useState(null)
+  const [deleteError, setDeleteError] = useState(null)
 
   useEffect(() => {
     setCourses(listCourses())
@@ -34,10 +35,13 @@ export default function CourseBrowser() {
   }
 
   const handleDelete = (course) => {
-    if (window.confirm(`Delete "${course.name}"? This can't be undone.`)) {
-      deleteCourse(course.id)
-      setCourses(listCourses())
+    if (!window.confirm(`Delete "${course.name}"? This can't be undone.`)) return
+    if (!deleteCourse(course.id)) {
+      setDeleteError('Could not delete this course. Browser storage may be full or unavailable.')
+      return
     }
+    setDeleteError(null)
+    setCourses(listCourses())
   }
 
   return (
@@ -49,6 +53,11 @@ export default function CourseBrowser() {
       {copyError && (
         <Alert variant="danger" dismissible onClose={() => setCopyError(null)}>
           {copyError}
+        </Alert>
+      )}
+      {deleteError && (
+        <Alert variant="danger" dismissible onClose={() => setDeleteError(null)}>
+          {deleteError}
         </Alert>
       )}
       <Row xs={1} sm={2} lg={3} className="g-3">

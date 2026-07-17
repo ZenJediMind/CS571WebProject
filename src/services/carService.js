@@ -11,8 +11,9 @@ export function defaultCarDataUrl() {
 /** Lazily falls back to the default template so a fresh browser still has a car. */
 export function loadPlayerCar() {
   const saved = readObject(CAR_KEY, null)
-  return saved?.imageDataUrl && typeof saved.imageDataUrl === 'string'
-    ? { imageDataUrl: saved.imageDataUrl }
+  const url = saved?.imageDataUrl
+  return typeof url === 'string' && url.startsWith('data:image/')
+    ? { imageDataUrl: url }
     : { imageDataUrl: defaultCarDataUrl() }
 }
 

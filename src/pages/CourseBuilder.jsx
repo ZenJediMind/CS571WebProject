@@ -9,6 +9,7 @@ import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PiecePreview from '../components/PiecePreview'
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { createEmptyGrid, GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
 import { THEMES, getTheme, DEFAULT_THEME_ID } from '../game/themes'
@@ -151,6 +152,10 @@ function CourseBuilderEditor() {
   }))
   const [stamp, setStamp] = useState({ piece: PIECES.STRAIGHT, rotation: 0 })
   const [themeId, setThemeId] = useState(course?.theme ?? DEFAULT_THEME_ID)
+  const [savedSnapshot, setSavedSnapshot] = useState(() => ({
+    name: course?.name ?? '',
+    theme: course?.theme ?? DEFAULT_THEME_ID,
+  }))
   const [showGridLines, setShowGridLines] = useState(true)
   const [hoverCell, setHoverCell] = useState(null)
   const [cursorCell, setCursorCell] = useState(null)
@@ -161,7 +166,13 @@ function CourseBuilderEditor() {
     () => (editor.grid ? validateCourse(editor.grid) : null),
     [editor.grid],
   )
-  const hasUnsavedChanges = editor.dirty || name !== course?.name || themeId !== (course?.theme ?? DEFAULT_THEME_ID)
+  const hasUnsavedChanges = editor.dirty
+    || name !== savedSnapshot.name
+    || themeId !== savedSnapshot.theme
+  const allowNextNavigation = useUnsavedChangesGuard(
+    hasUnsavedChanges,
+    'Leave without saving? Unsaved track changes will be lost.',
+  )
 
   /* ---------- canvas drawing ---------- */
   useEffect(() => {
@@ -307,32 +318,42 @@ function CourseBuilderEditor() {
 
   /* ---------- top actions ---------- */
   const persistCourse = () => {
-    const saved = saveCourse({ ...course, name: name.trim() || 'Untitled Course', grid: editor.grid, theme: themeId })
+    const trimmedName = name.trim() || 'Untitled Course'
+    const saved = saveCourse({
+      ...course,
+      name: trimmedName,
+      grid: editor.grid,
+      theme: themeId,
+      draft: !validation?.ok,
+    })
     if (!saved) {
       setSaveError(true)
       return null
     }
     setSaveError(false)
+    setSavedSnapshot({ name: trimmedName, theme: themeId })
     dispatch({ type: 'saved' })
     return saved
   }
 
   const handleSave = () => {
-    if (persistCourse()) navigate('/')
+    if (!persistCourse()) return
+    allowNextNavigation()
+    navigate('/')
   }
 
   const handleTestDrive = () => {
+    if (!validation?.ok) return
     const saved = persistCourse()
     if (!saved) return
+    allowNextNavigation()
     // Swap the /build/new history entry for the saved id so Back returns here
     if (courseId === 'new') navigate(`/build/${saved.id}`, { replace: true })
     navigate(`/race/${saved.id}`)
   }
 
   const handleBack = () => {
-    if (!hasUnsavedChanges || window.confirm('Leave without saving? Unsaved track changes will be lost.')) {
-      navigate('/')
-    }
+    navigate('/')
   }
 
   /* ---------- guards ---------- */
@@ -409,12 +430,17 @@ function CourseBuilderEditor() {
           </Form.Select>
         </Col>
         <Col xs="auto">
-          <Button variant="success" onClick={handleTestDrive} disabled={!validation?.ok}>
+          <Button
+            variant="success"
+            onClick={handleTestDrive}
+            disabled={!validation?.ok}
+            title={validation?.ok ? 'Save and race this course' : (validation?.error ?? 'Track is not race-ready')}
+          >
             Test Drive
           </Button>
         </Col>
         <Col xs="auto">
-          <Button variant="primary" onClick={handleSave} disabled={!validation?.ok}>
+          <Button variant="primary" onClick={handleSave}>
             Save Course
           </Button>
         </Col>
@@ -541,7 +567,7 @@ function CourseBuilderEditor() {
           >
             {validation?.ok
               ? 'Track is race-ready! Test Drive it or Save.'
-              : validation?.error}
+              : `${validation?.error ?? 'Track is incomplete.'} You can still Save a work-in-progress.`}
           </Alert>
         </Col>
       </Row>

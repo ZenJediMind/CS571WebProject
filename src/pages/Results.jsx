@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Alert from 'react-bootstrap/Alert'
 import Badge from 'react-bootstrap/Badge'
 import Button from 'react-bootstrap/Button'
-import Card from 'react-bootstrap/Card'
 import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
@@ -14,12 +14,17 @@ export default function Results() {
   const location = useLocation()
   const course = useMemo(() => getCourse(courseId), [courseId])
 
-  const { ms, resultId, award: passedAward } = location.state ?? {}
+  const { ms, resultId, award: passedAward, ghostSaved } = location.state ?? {}
+  const [award, setAward] = useState(passedAward ?? null)
 
-  // Award during render (idempotent) so Best/Points never flash empty defaults.
-  const award = useMemo(() => {
-    if (ms == null || !resultId) return null
-    return passedAward ?? recordTimeOnce(resultId, courseId, ms)
+  // Prefer award from race navigation; only record when that payload is missing.
+  useEffect(() => {
+    if (ms == null || !resultId) return
+    if (passedAward != null) {
+      setAward(passedAward)
+      return
+    }
+    setAward(recordTimeOnce(resultId, courseId, ms))
   }, [ms, resultId, courseId, passedAward])
 
   // Deep-linked here without a finished race — nothing to show
@@ -34,32 +39,37 @@ export default function Results() {
           <h1 className="wr-hero-title text-center mb-1">Finish!</h1>
           <p className="lead text-center mb-4">{course.name}</p>
 
-          <Card className="mb-4">
-            <Card.Body>
-              <Row className="text-center gy-3">
-                <Col sm={4}>
-                  <div className="text-secondary">Your Time</div>
-                  <div className="wr-mono fs-3">{formatMs(ms)}</div>
-                </Col>
-                <Col sm={4}>
-                  <div className="text-secondary">Best Time</div>
-                  <div className="wr-mono fs-3">
-                    {bestMs != null ? formatMs(bestMs) : '—'}
-                    {award?.newBest && <Badge bg="success" className="ms-2 align-middle">New!</Badge>}
-                  </div>
-                </Col>
-                <Col sm={4}>
-                  <div className="text-secondary">Points Earned</div>
-                  <div className="wr-mono fs-3">+{award?.pointsEarned ?? 0}</div>
-                </Col>
-              </Row>
-              {award?.beatenRivals.length > 0 && (
-                <p className="text-center mt-3 mb-0">
-                  You beat {award.beatenRivals.map((rival) => rival.name).join(', ')}!
-                </p>
-              )}
-            </Card.Body>
-          </Card>
+          {ghostSaved === false && (
+            <Alert variant="warning" className="py-2">
+              Your personal best was saved, but the ghost replay could not be stored
+              (browser storage may be full or blocked).
+            </Alert>
+          )}
+
+          <div className="wr-results-panel">
+            <Row className="text-center gy-3">
+              <Col sm={4}>
+                <div className="wr-stat-label">Your Time</div>
+                <div className="wr-mono fs-3">{formatMs(ms)}</div>
+              </Col>
+              <Col sm={4}>
+                <div className="wr-stat-label">Best Time</div>
+                <div className="wr-mono fs-3">
+                  {bestMs != null ? formatMs(bestMs) : '—'}
+                  {award?.newBest && <Badge bg="success" className="ms-2 align-middle">New!</Badge>}
+                </div>
+              </Col>
+              <Col sm={4}>
+                <div className="wr-stat-label">Points Earned</div>
+                <div className="wr-mono fs-3">+{award?.pointsEarned ?? 0}</div>
+              </Col>
+            </Row>
+            {award?.beatenRivals?.length > 0 && (
+              <p className="text-center mt-3 mb-0">
+                You beat {award.beatenRivals.map((rival) => rival.name).join(', ')}!
+              </p>
+            )}
+          </div>
 
           <div className="d-grid gap-2">
             <Button as={Link} to={`/race/${courseId}`} variant="primary" className="wr-menu-btn">

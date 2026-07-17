@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Routes, Route, Outlet, useParams } from 'react-router-dom'
+import { createHashRouter, Navigate, RouterProvider, Outlet, useParams } from 'react-router-dom'
 import AppNavbar from './components/AppNavbar'
 import Home from './pages/Home'
 import CourseBrowser from './pages/CourseBrowser'
@@ -24,23 +24,24 @@ function RaceRoute() {
   return <Race key={courseId} />
 }
 
+const router = createHashRouter([
+  {
+    element: <Layout />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/browse', element: <CourseBrowser /> },
+      { path: '/build/:courseId', element: <CourseBuilder /> },
+      { path: '/car', element: <CarDesigner /> },
+      { path: '/race/:courseId', element: <RaceRoute /> },
+      { path: '/results/:courseId', element: <Results /> },
+      { path: '/leaderboard', element: <Leaderboard /> },
+      { path: '/invite', element: <Invite /> },
+      { path: '/settings', element: <Settings /> },
+      { path: '*', element: <Navigate to="/" replace /> },
+    ],
+  },
+])
+
 export default function App() {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<CourseBrowser />} />
-          <Route path="/build/:courseId" element={<CourseBuilder />} />
-          <Route path="/car" element={<CarDesigner />} />
-          <Route path="/race/:courseId" element={<RaceRoute />} />
-          <Route path="/results/:courseId" element={<Results />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/invite" element={<Invite />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </HashRouter>
-  )
+  return <RouterProvider router={router} />
 }

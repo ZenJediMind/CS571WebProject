@@ -26,7 +26,7 @@ export default function Leaderboard() {
   const ranking = useMemo(() => getPointsRanking(), [])
 
   return (
-    <Container className="py-4">
+    <Container className="py-4 wr-board">
       <PageHeader title="Leaderboard" />
       <Tabs defaultActiveKey="times" className="mb-3">
         <Tab eventKey="times" title="Fastest Times">
@@ -42,7 +42,7 @@ export default function Leaderboard() {
               ))}
             </Form.Select>
           </Form.Group>
-          <Table striped hover responsive>
+          <Table striped hover responsive className="wr-board-table mb-0">
             <thead>
               <tr>
                 <th scope="col">#</th>
@@ -54,7 +54,7 @@ export default function Leaderboard() {
             <tbody>
               {times.map((row, index) => (
                 <tr key={row.id} className={row.isPlayer ? 'wr-row-you' : undefined}>
-                  <td>{index + 1}</td>
+                  <td className="wr-mono">{index + 1}</td>
                   <td>{row.name}{row.isPlayer && ' ★'}</td>
                   <td>{row.car}</td>
                   <td className="wr-mono">{formatMs(row.ms)}</td>
@@ -63,13 +63,13 @@ export default function Leaderboard() {
             </tbody>
           </Table>
           {!times.some((row) => row.isPlayer) && (
-            <p className="text-secondary">
+            <p className="text-secondary mt-3">
               Finish a race on this course to put yourself on the board!
             </p>
           )}
         </Tab>
         <Tab eventKey="points" title="Overall Points">
-          <Table striped hover responsive>
+          <Table striped hover responsive className="wr-board-table mb-0">
             <thead>
               <tr>
                 <th scope="col">#</th>
@@ -81,7 +81,7 @@ export default function Leaderboard() {
             <tbody>
               {ranking.map((row, index) => (
                 <tr key={row.id} className={row.isPlayer ? 'wr-row-you' : undefined}>
-                  <td>{index + 1}</td>
+                  <td className="wr-mono">{index + 1}</td>
                   <td>{row.name}{row.isPlayer && ' ★'}</td>
                   <td>{row.car}</td>
                   <td className="wr-mono">{row.points}</td>
@@ -89,7 +89,7 @@ export default function Leaderboard() {
               ))}
             </tbody>
           </Table>
-          <p className="text-secondary">
+          <p className="text-secondary mt-3">
             Earn +10 points for every rival you out-race and +5 for a new personal best.
           </p>
         </Tab>

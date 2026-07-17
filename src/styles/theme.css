@@ -121,12 +121,71 @@ h1, h2, h3, .wr-display {
   text-align: center;
 }
 
+/* Race start: traffic light (3 red → 2–1 yellow → GO green) */
 .wr-countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.wr-traffic-light {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.65rem 0.55rem;
+  background: linear-gradient(180deg, #3a3d45 0%, var(--wr-asphalt) 100%);
+  border: 3px solid #111318;
+  border-radius: 14px;
+  box-shadow:
+    0 6px 0 #111318,
+    0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.wr-traffic-lamp {
+  width: clamp(1.6rem, 4vw, 2.4rem);
+  height: clamp(1.6rem, 4vw, 2.4rem);
+  border-radius: 50%;
+  background: #1a1c20;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.65);
+  opacity: 0.35;
+}
+
+.wr-traffic-lamp--red.is-on {
+  background: radial-gradient(circle at 35% 30%, #ff6b6b, var(--wr-red) 55%, var(--wr-red-dark));
+  box-shadow: 0 0 18px rgba(197, 5, 12, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.35);
+  opacity: 1;
+}
+
+.wr-traffic-lamp--yellow.is-on {
+  background: radial-gradient(circle at 35% 30%, #ffe08a, var(--wr-cheddar) 55%, var(--wr-cheddar-dark));
+  box-shadow: 0 0 18px rgba(247, 166, 0, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+  opacity: 1;
+}
+
+.wr-traffic-lamp--green.is-on {
+  background: radial-gradient(circle at 35% 30%, #8dff7a, #3ecf2a 55%, var(--wr-turf));
+  box-shadow: 0 0 18px rgba(58, 125, 44, 0.9), inset 0 1px 2px rgba(255, 255, 255, 0.35);
+  opacity: 1;
+}
+
+.wr-countdown-label {
   font-family: var(--wr-font-display);
   font-size: clamp(3rem, 12vw, 6rem);
-  color: var(--wr-cheddar);
+  line-height: 1;
   text-shadow: 4px 4px 0 var(--wr-asphalt);
+  color: var(--wr-cheddar);
 }
+
+.wr-countdown--3 .wr-countdown-label { color: var(--wr-red); }
+.wr-countdown--2 .wr-countdown-label,
+.wr-countdown--1 .wr-countdown-label { color: var(--wr-cheddar); }
+.wr-countdown--go .wr-countdown-label { color: #3ecf2a; }
 
 /* Canvas surfaces */
 .wr-game-canvas {
@@ -204,9 +263,18 @@ h1, h2, h3, .wr-display {
     animation: wr-pop 400ms ease;
   }
 
+  .wr-traffic-lamp.is-on {
+    animation: wr-lamp-pop 350ms ease;
+  }
+
   @keyframes wr-pop {
-    from { transform: scale(1.35); opacity: 0.4; }
-    to { transform: scale(1); opacity: 1; }
+    from { transform: translate(-50%, -50%) scale(1.2); opacity: 0.45; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+
+  @keyframes wr-lamp-pop {
+    from { transform: scale(0.75); }
+    to { transform: scale(1); }
   }
 }
 
@@ -222,3 +290,379 @@ h1, h2, h3, .wr-display {
 
 .wr-split-ahead { background: var(--wr-turf); }
 .wr-split-behind { background: var(--wr-red); }
+
+/* ── Home hero: full-bleed track under brand ── */
+.wr-home-hero {
+  position: relative;
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--wr-asphalt);
+}
+
+.wr-home-hero-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.wr-home-hero-art canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  opacity: 0.92;
+}
+
+.wr-home-hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(35, 37, 43, 0.55) 0%, rgba(35, 37, 43, 0.35) 40%, rgba(35, 37, 43, 0.72) 100%),
+    radial-gradient(ellipse 70% 55% at 50% 42%, rgba(35, 37, 43, 0.15) 0%, rgba(35, 37, 43, 0.7) 100%);
+  pointer-events: none;
+}
+
+.wr-home-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 28rem;
+  padding-block: 2.5rem;
+  text-align: center;
+}
+
+.wr-home-hero .wr-hero-title {
+  color: var(--wr-red);
+  text-shadow:
+    3px 3px 0 var(--wr-asphalt),
+    0 0 28px rgba(197, 5, 12, 0.35);
+}
+
+.wr-home-hero-lead {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  margin-bottom: 1.5rem;
+}
+
+.wr-home-cta {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.wr-home-cta .btn-outline-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-border-color: rgba(255, 255, 255, 0.75);
+  --bs-btn-hover-bg: var(--wr-red);
+  --bs-btn-hover-border-color: var(--wr-red);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: var(--wr-red-dark);
+  --bs-btn-active-border-color: var(--wr-red-dark);
+  --bs-btn-active-color: #fff;
+  background: rgba(35, 37, 43, 0.35);
+}
+
+.wr-home-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.wr-home-secondary a {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.wr-home-secondary a:hover {
+  color: var(--wr-cheddar);
+  border-bottom-color: var(--wr-cheddar);
+}
+
+.wr-home-hero .wr-checker {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wr-home-hero-art {
+    animation: wr-hero-fade 900ms ease-out both;
+  }
+
+  .wr-home-hero .wr-checker {
+    background-position: 0 0;
+    animation: wr-checker-drift 18s linear infinite;
+  }
+
+  @keyframes wr-hero-fade {
+    from { opacity: 0; transform: scale(1.04); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes wr-checker-drift {
+    from { background-position: 0 0; }
+    to { background-position: 56px 0; }
+  }
+}
+
+/* ── Race shell: asphalt page + compact HUD ── */
+body.wr-race-active {
+  background: var(--wr-asphalt);
+  color: var(--wr-paper);
+}
+
+.wr-race-shell {
+  max-width: 1100px;
+}
+
+.wr-race-shell .h4,
+.wr-race-shell h1 {
+  color: var(--wr-paper);
+}
+
+.wr-race-stage {
+  position: relative;
+  margin-inline: auto;
+}
+
+.wr-race-stage .wr-game-canvas {
+  width: 100%;
+  border-color: var(--wr-asphalt-2);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.wr-race-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.wr-race-hud .wr-hud-badge {
+  font-size: 0.92rem;
+  min-width: 0;
+  padding: 0.28rem 0.55rem;
+  border-width: 1px;
+  background: rgba(35, 37, 43, 0.92);
+}
+
+.wr-race-hud-title {
+  font-family: var(--wr-font-display);
+  font-size: 1rem;
+  margin: 0;
+  margin-right: auto;
+  letter-spacing: 0.02em;
+  color: var(--wr-cheddar);
+}
+
+.wr-race-icon-btn {
+  --bs-btn-padding-y: 0.2rem;
+  --bs-btn-padding-x: 0.45rem;
+  --bs-btn-font-size: 0.85rem;
+  --bs-btn-color: rgba(255, 255, 255, 0.75);
+  --bs-btn-border-color: rgba(255, 255, 255, 0.22);
+  --bs-btn-hover-bg: rgba(255, 255, 255, 0.08);
+  --bs-btn-hover-border-color: var(--wr-cheddar);
+  --bs-btn-hover-color: var(--wr-cheddar);
+  --bs-btn-active-bg: rgba(247, 166, 0, 0.15);
+  --bs-btn-active-border-color: var(--wr-cheddar);
+  --bs-btn-active-color: var(--wr-cheddar);
+  line-height: 1.2;
+}
+
+.wr-race-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(50, 53, 61, 0.85);
+  border: 1px solid rgba(247, 166, 0, 0.28);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.wr-race-tip p {
+  margin: 0;
+  flex: 1;
+}
+
+.wr-race-tip-dismiss {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 0.15rem;
+  cursor: pointer;
+}
+
+.wr-race-tip-dismiss:hover {
+  color: var(--wr-cheddar);
+}
+
+/* ── Car Designer studio ── */
+.wr-car-studio .wr-paint-frame {
+  width: min(100%, 560px);
+  border-width: 3px;
+  border-color: var(--wr-asphalt);
+}
+
+.wr-car-studio .wr-paint-frame canvas {
+  width: 100%;
+}
+
+.wr-car-tools {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+}
+
+.wr-car-tools .btn {
+  padding: 0.4rem 0.25rem;
+  font-size: 1.05rem;
+}
+
+.wr-panel-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wr-asphalt-2);
+  margin-bottom: 0.45rem;
+}
+
+.wr-car-tool-panel {
+  background: var(--wr-paper);
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 6px;
+  padding: 0.65rem;
+}
+
+.wr-car-template-thumb {
+  width: 96px;
+  height: 96px;
+  background: var(--wr-paper);
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 6px;
+  display: block;
+}
+
+.wr-car-template-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(35, 37, 43, 0.1);
+}
+
+.wr-car-template-row:last-child {
+  border-bottom: 0;
+}
+
+.wr-car-race-preview {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  background: var(--wr-paper);
+  border: 2px solid var(--wr-asphalt);
+  border-radius: 6px;
+}
+
+/* ── Leaderboard / Invite / Results Badger chrome ── */
+.wr-board .nav-tabs {
+  border-bottom-color: var(--wr-asphalt-2);
+}
+
+.wr-board .nav-tabs .nav-link {
+  color: var(--wr-asphalt-2);
+  font-family: var(--wr-font-display);
+  font-size: 0.95rem;
+}
+
+.wr-board .nav-tabs .nav-link.active {
+  color: var(--wr-red);
+  border-color: var(--wr-asphalt-2) var(--wr-asphalt-2) var(--wr-paper);
+  border-top: 3px solid var(--wr-cheddar);
+}
+
+.wr-board-table {
+  --bs-table-striped-bg: rgba(247, 166, 0, 0.08);
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.wr-board-table thead th {
+  background: var(--wr-asphalt);
+  color: var(--wr-cheddar);
+  font-family: var(--wr-font-display);
+  font-weight: 400;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  border-bottom-color: var(--wr-cheddar);
+}
+
+.wr-lobby-panel {
+  background: var(--wr-paper);
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 6px;
+  border-top: 4px solid var(--wr-cheddar);
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.wr-lobby-code {
+  background: var(--wr-asphalt) !important;
+  color: var(--wr-cheddar) !important;
+  border-color: var(--wr-asphalt) !important;
+  letter-spacing: 0.12em;
+}
+
+.wr-lobby-list .list-group-item {
+  background: transparent;
+  border-color: rgba(35, 37, 43, 0.12);
+}
+
+.wr-status-host {
+  background: var(--wr-red) !important;
+}
+
+.wr-status-ready {
+  background: var(--wr-turf) !important;
+}
+
+.wr-results-panel {
+  background: var(--wr-paper);
+  border: 2px solid var(--wr-asphalt-2);
+  border-radius: 6px;
+  border-top: 4px solid var(--wr-red);
+  padding: 1.25rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.wr-results-panel .wr-stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--wr-asphalt-2);
+  font-weight: 700;
+}
+
+.wr-results-panel .wr-mono {
+  color: var(--wr-ink);
+}

@@ -55,6 +55,7 @@ export default function Race() {
   const [countdown, setCountdown] = useState(COUNTDOWN_START)
   const [showGo, setShowGo] = useState(false)
   const [paused, setPaused] = useState(false)
+  const [showTip, setShowTip] = useState(true)
 
   const settings = useMemo(() => getSettings(), [])
   const [soundOn, setSoundOn] = useState(settings.sound)
@@ -68,6 +69,13 @@ export default function Race() {
   useEffect(() => {
     audioRef.current?.setEnabled(soundOn)
   }, [soundOn])
+
+  // Unlock AudioContext on first pointer gesture (countdown beeps need a prior gesture).
+  useEffect(() => {
+    const unlockAudio = () => audioRef.current?.init()
+    window.addEventListener('pointerdown', unlockAudio)
+    return () => window.removeEventListener('pointerdown', unlockAudio)
+  }, [])
 
   const toggleSound = () => {
     audioRef.current?.init()
@@ -108,9 +116,9 @@ export default function Race() {
     return () => clearTimeout(timer)
   }, [countdown, canRace])
 
-  const handleFinish = useCallback(({ ms, resultId, award }) => {
+  const handleFinish = useCallback(({ ms, resultId, award, ghostSaved }) => {
     navigate(`/results/${courseId}`, {
-      state: { ms, resultId, award },
+      state: { ms, resultId, award, ghostSaved },
     })
   }, [navigate, courseId])
 
@@ -121,6 +129,13 @@ export default function Race() {
     settings,
     audioRef,
   })
+
+  // Asphalt page chrome only while an actual race session is on screen
+  useEffect(() => {
+    if (!canRace) return undefined
+    document.body.classList.add('wr-race-active')
+    return () => document.body.classList.remove('wr-race-active')
+  }, [canRace])
 
   // Split chip: show each checkpoint delta briefly, keyed by split id
   const [visibleSplit, setVisibleSplit] = useState(null)
@@ -184,9 +199,9 @@ export default function Race() {
   }
 
   return (
-    <Container className="py-3">
-      <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
-        <h1 className="h4 mb-0 me-auto">{course.name}</h1>
+    <Container className="py-3 wr-race-shell">
+      <div className="wr-race-hud">
+        <h1 className="wr-race-hud-title">{course.name}</h1>
         <div className="wr-hud-badge" aria-label={`Race time ${formatMs(hud.elapsedMs)}`}>
           TIME {formatMs(hud.elapsedMs)}
         </div>
@@ -206,6 +221,7 @@ export default function Race() {
         )}
         <Button
           variant="outline-secondary"
+          className="wr-race-icon-btn"
           onClick={toggleSound}
           aria-pressed={soundOn}
           aria-label={soundOn ? 'Mute sound' : 'Unmute sound'}
@@ -214,6 +230,7 @@ export default function Race() {
         </Button>
         <Button
           variant="outline-secondary"
+          className="wr-race-icon-btn"
           onClick={() => setPaused(true)}
           disabled={countdown > 0}
         >
@@ -221,12 +238,23 @@ export default function Race() {
         </Button>
       </div>
 
-      <Alert variant="light" className="py-2 mb-2">
-        Steer with ← ↑ → ↓ (or WASD). Space = handbrake drift. Esc pauses.
-        Hit the glowing checkpoints in order — 3 laps to finish!
-      </Alert>
+      {showTip && (
+        <div className="wr-race-tip">
+          <p>
+            ←↑→↓ / WASD steer · Space drift · Esc pause · checkpoints in order · 3 laps
+          </p>
+          <button
+            type="button"
+            className="wr-race-tip-dismiss"
+            onClick={() => setShowTip(false)}
+            aria-label="Dismiss controls tip"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
-      <div className="position-relative">
+      <div className="wr-race-stage">
         <canvas
           ref={canvasRef}
           width={COURSE_WIDTH}
@@ -237,11 +265,19 @@ export default function Race() {
         />
         {(countdown > 0 || showGo) && (
           <div
-            className="position-absolute top-50 start-50 translate-middle wr-countdown"
+            className={`wr-countdown wr-countdown--${countdown > 0 ? countdown : 'go'}`}
             key={countdown} // re-mounts so the pop animation replays each tick
             aria-live="assertive"
+            aria-label={countdown > 0 ? `Countdown ${countdown}` : 'Go'}
           >
-            {countdown > 0 ? countdown : 'GO!'}
+            <div className="wr-traffic-light" aria-hidden="true">
+              <span className={`wr-traffic-lamp wr-traffic-lamp--red${countdown === 3 ? ' is-on' : ''}`} />
+              <span className={`wr-traffic-lamp wr-traffic-lamp--yellow${countdown === 2 || countdown === 1 ? ' is-on' : ''}`} />
+              <span className={`wr-traffic-lamp wr-traffic-lamp--green${showGo ? ' is-on' : ''}`} />
+            </div>
+            <span className="wr-countdown-label">
+              {countdown > 0 ? countdown : 'GO!'}
+            </span>
           </div>
         )}
       </div>

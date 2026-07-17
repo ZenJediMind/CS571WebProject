@@ -89,15 +89,16 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
   useEffect(() => { restart() }, [restart])
 
   // Always track physical key state; only feed the sim while racing.
+  // Audio init runs on any bound key so countdown beeps unlock during the countdown.
   useEffect(() => {
     const setHeld = (pressed) => (event) => {
       const control = KEY_BINDINGS[event.code]
       if (!control) return
       heldKeysRef.current[control] = pressed
+      if (pressed) audioRef.current?.init()
       if (!racing) return
       event.preventDefault()
       inputsRef.current[control] = pressed
-      if (pressed) audioRef.current?.init() // user gesture: safe to start audio
     }
     const handleKeyDown = setHeld(true)
     const handleKeyUp = setHeld(false)
@@ -198,9 +199,11 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
           const recording = recorderRef.current.finish(state)
           const ms = recording.ms
           const resultId = crypto.randomUUID()
-          saveGhostIfBest(course.id, recording)
+          const ghostOk = saveGhostIfBest(course.id, recording)
           const award = recordTimeOnce(resultId, course.id, ms)
-          onFinishRef.current?.({ ms, resultId, award })
+          // A new PB should persist a ghost; false means the write failed (or was skipped oddly).
+          const ghostSaved = !award.newBest || ghostOk
+          onFinishRef.current?.({ ms, resultId, award, ghostSaved })
         }
       }
       frameId = requestAnimationFrame(frame)

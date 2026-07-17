@@ -1,7 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
-import Card from 'react-bootstrap/Card'
 import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
@@ -9,6 +8,7 @@ import Row from 'react-bootstrap/Row'
 import { useNavigate } from 'react-router-dom'
 import PaintCanvas from '../components/PaintCanvas'
 import { PAINT_TOOLS } from '../components/paintTools'
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { CAR_CANVAS_SIZE, CAR_TEMPLATES, renderCarTemplateToDataUrl } from '../game/templates'
 import { loadPlayerCar, savePlayerCar } from '../services/carService'
 
@@ -43,6 +43,7 @@ const PALETTE = [
 ]
 
 const HISTORY_LIMIT = 20
+const TEMPLATE_THUMB_SIZE = 96
 
 function paintReducer(state, action) {
   switch (action.type) {
@@ -62,7 +63,7 @@ function paintReducer(state, action) {
 }
 
 /** Mini rasterized preview of a vector car template. */
-function CarTemplatePreview({ template, size = 64 }) {
+function CarTemplatePreview({ template, size = TEMPLATE_THUMB_SIZE }) {
   const canvasRef = useRef(null)
   useEffect(() => {
     const ctx = canvasRef.current.getContext('2d')
@@ -76,7 +77,7 @@ function CarTemplatePreview({ template, size = 64 }) {
       height={size}
       role="img"
       aria-label={`${template.name} template preview`}
-      className="bg-white border rounded"
+      className="wr-car-template-thumb"
     />
   )
 }
@@ -94,6 +95,10 @@ export default function CarDesigner() {
   const [saveError, setSaveError] = useState(false)
 
   const dirty = paint.history.length > 0 && !saved
+  const allowNextNavigation = useUnsavedChangesGuard(
+    dirty,
+    'Leave without saving? Your car changes will be lost.',
+  )
 
   const handleSave = () => {
     if (!savePlayerCar(paint.current)) {
@@ -102,13 +107,12 @@ export default function CarDesigner() {
     }
     setSaveError(false)
     setSaved(true)
+    allowNextNavigation()
     navigate('/')
   }
 
   const handleBack = () => {
-    if (!dirty || window.confirm('Leave without saving? Your car changes will be lost.')) {
-      navigate('/')
-    }
+    navigate('/')
   }
 
   const handleUseTemplate = (template) => {
@@ -119,7 +123,7 @@ export default function CarDesigner() {
   }
 
   return (
-    <Container fluid="xl" className="py-3">
+    <Container fluid="xl" className="py-3 wr-car-studio">
       <Row className="align-items-center g-2 mb-2">
         <Col xs="auto">
           <Button variant="outline-secondary" size="sm" onClick={handleBack}>← Back</Button>
@@ -130,15 +134,15 @@ export default function CarDesigner() {
         <Col xs="auto" className="d-flex align-items-center gap-2">
           <img
             src={paint.current}
-            width={40}
-            height={40}
+            width={56}
+            height={56}
             alt="Your car at race size"
-            className="border rounded bg-white"
+            className="wr-car-race-preview"
           />
           <Button variant="primary" onClick={handleSave}>Save Car</Button>
         </Col>
       </Row>
-      <div className="wr-checker mb-2" aria-hidden="true" />
+      <div className="wr-checker mb-3" aria-hidden="true" />
 
       {saveError && (
         <Alert variant="danger" dismissible onClose={() => setSaveError(false)}>
@@ -147,54 +151,52 @@ export default function CarDesigner() {
         </Alert>
       )}
 
-      <Row className="g-3">
-        <Col md={3} lg={2}>
-          <Card className="mb-2">
-            <Card.Header className="py-1 text-uppercase small fw-bold">Tools</Card.Header>
-            <Card.Body className="p-2">
-              <div className="d-grid gap-1" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                {TOOLBOX.map((item) => (
-                  <Button
-                    key={item.tool}
-                    variant={tool === item.tool ? 'warning' : 'light'}
-                    aria-pressed={tool === item.tool}
-                    title={item.label}
-                    onClick={() => setTool(item.tool)}
-                  >
-                    <span aria-hidden="true">{item.icon}</span>
-                    <span className="visually-hidden">{item.label}</span>
-                  </Button>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-          <Form.Group className="mb-2">
-            <Form.Label htmlFor="brush-size" className="small fw-bold text-uppercase">
-              Brush size
-            </Form.Label>
-            <Form.Select
-              id="brush-size"
-              size="sm"
-              value={brushSize}
-              onChange={(event) => setBrushSize(Number(event.target.value))}
-            >
-              {BRUSH_SIZES.map((option) => (
-                <option key={option.size} value={option.size}>{option.label}</option>
+      <Row className="g-3 align-items-start">
+        <Col xs={12} md={4} lg={3} xl={2}>
+          <div className="wr-car-tool-panel mb-2">
+            <div className="wr-panel-label">Tools</div>
+            <div className="wr-car-tools" role="toolbar" aria-label="Paint tools">
+              {TOOLBOX.map((item) => (
+                <Button
+                  key={item.tool}
+                  variant={tool === item.tool ? 'warning' : 'light'}
+                  aria-pressed={tool === item.tool}
+                  title={item.label}
+                  onClick={() => setTool(item.tool)}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span className="visually-hidden">{item.label}</span>
+                </Button>
               ))}
-            </Form.Select>
-          </Form.Group>
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            className="w-100"
-            onClick={() => dispatch({ type: 'undo' })}
-            disabled={paint.history.length === 0}
-          >
-            ↩ Undo
-          </Button>
+            </div>
+            <Form.Group className="mt-2 mb-2">
+              <Form.Label htmlFor="brush-size" className="wr-panel-label mb-1">
+                Brush size
+              </Form.Label>
+              <Form.Select
+                id="brush-size"
+                size="sm"
+                value={brushSize}
+                onChange={(event) => setBrushSize(Number(event.target.value))}
+              >
+                {BRUSH_SIZES.map((option) => (
+                  <option key={option.size} value={option.size}>{option.label}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="w-100"
+              onClick={() => dispatch({ type: 'undo' })}
+              disabled={paint.history.length === 0}
+            >
+              ↩ Undo
+            </Button>
+          </div>
         </Col>
 
-        <Col md={6} lg={7} className="text-center">
+        <Col xs={12} md={8} lg={6} xl={7} className="text-center">
           <PaintCanvas
             width={CAR_CANVAS_SIZE}
             height={CAR_CANVAS_SIZE}
@@ -229,27 +231,23 @@ export default function CarDesigner() {
           </div>
         </Col>
 
-        <Col md={3}>
-          <Card>
-            <Card.Header className="py-1 text-uppercase small fw-bold">
-              Start from a template
-            </Card.Header>
-            <Card.Body className="p-2 d-grid gap-2">
-              {CAR_TEMPLATES.map((template) => (
-                <div key={template.id} className="d-flex align-items-center gap-2">
-                  <CarTemplatePreview template={template} />
-                  <div className="flex-grow-1 small">{template.name}</div>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => handleUseTemplate(template)}
-                  >
-                    Use →
-                  </Button>
-                </div>
-              ))}
-            </Card.Body>
-          </Card>
+        <Col xs={12} lg={3}>
+          <div className="wr-car-tool-panel">
+            <div className="wr-panel-label">Start from a template</div>
+            {CAR_TEMPLATES.map((template) => (
+              <div key={template.id} className="wr-car-template-row">
+                <CarTemplatePreview template={template} />
+                <div className="flex-grow-1 small fw-semibold">{template.name}</div>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => handleUseTemplate(template)}
+                >
+                  Use
+                </Button>
+              </div>
+            ))}
+          </div>
         </Col>
       </Row>
     </Container>

@@ -112,8 +112,10 @@ export function copyCourse(id) {
   })
 }
 
+/** Remove a user course. Only clears related data if the courses write succeeds. */
 export function deleteCourse(id) {
-  writeKey(COURSES_KEY, readUserCourses().filter((course) => course.id !== id))
+  const remaining = readUserCourses().filter((course) => course.id !== id)
+  if (!writeKey(COURSES_KEY, remaining)) return false
   clearCourseBestTime(id)
   clearCourseGhost(id)
   const votes = readVotes()
@@ -121,6 +123,7 @@ export function deleteCourse(id) {
     const { [id]: _removed, ...rest } = votes
     writeKey(VOTES_KEY, rest)
   }
+  return true
 }
 
 export function voteForCourse(id) {

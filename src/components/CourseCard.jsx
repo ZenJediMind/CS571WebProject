@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
 import { useNavigate } from 'react-router-dom'
+import { validateCourse } from '../game/courseModel'
 import { drawCourseThumbnail } from '../game/render'
 
 const THUMBNAIL_WIDTH = 320
@@ -13,6 +14,7 @@ const THUMBNAIL_WIDTH = 320
 export default function CourseCard({ course, onVote, onCopy, onDelete }) {
   const navigate = useNavigate()
   const canvasRef = useRef(null)
+  const playCheck = useMemo(() => validateCourse(course.grid), [course.grid])
 
   useEffect(() => {
     drawCourseThumbnail(canvasRef.current, course)
@@ -49,6 +51,8 @@ export default function CourseCard({ course, onVote, onCopy, onDelete }) {
             variant="primary"
             className="flex-grow-1"
             onClick={() => navigate(`/race/${course.id}`)}
+            disabled={!playCheck.ok}
+            title={playCheck.ok ? 'Play this course' : playCheck.error}
           >
             Play
           </Button>
