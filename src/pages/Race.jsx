@@ -70,11 +70,15 @@ export default function Race() {
     audioRef.current?.setEnabled(soundOn)
   }, [soundOn])
 
-  // Unlock AudioContext on first pointer gesture (countdown beeps need a prior gesture).
+  // Unlock AudioContext on first gesture (countdown beeps need a prior gesture).
   useEffect(() => {
     const unlockAudio = () => audioRef.current?.init()
     window.addEventListener('pointerdown', unlockAudio)
-    return () => window.removeEventListener('pointerdown', unlockAudio)
+    window.addEventListener('keydown', unlockAudio)
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
+    }
   }, [])
 
   const toggleSound = () => {
@@ -101,6 +105,15 @@ export default function Race() {
     image.src = loadPlayerCar().imageDataUrl
     return () => { cancelled = true }
   }, [])
+
+  // Leaving raceable mode (e.g. narrow breakpoint) must reset countdown so a
+  // later widen doesn't resume mid-race with countdown already at 0.
+  useEffect(() => {
+    if (canRace) return
+    setCountdown(COUNTDOWN_START)
+    setShowGo(false)
+    setPaused(false)
+  }, [canRace])
 
   // 3-2-1 countdown, then a brief GO! flash — only for raceable desktop sessions.
   useEffect(() => {

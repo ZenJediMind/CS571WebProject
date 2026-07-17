@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createRaceState, stepRace, MAX_SPEED, TOTAL_LAPS } from '../game/engine'
+import { createRaceState, stepRace, MAX_FRAME_SECONDS, MAX_SPEED, TOTAL_LAPS } from '../game/engine'
 import {
   createCourseBackground, createMarksOverlay, createSparkBurst, drawFrame,
   stampSkidMarks, updateAndDrawSparks,
@@ -158,8 +158,10 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
         lastTimestamp = timestamp
 
         if (dt > 0) {
-          stepRace(state, inputsRef.current, dt)
-          stepRivalGhosts(rivalGhostsRef.current, dt)
+          // Same stall clamp as stepRace so tab-switch gaps don't desync rivals.
+          const simDt = Math.min(dt, MAX_FRAME_SECONDS)
+          stepRace(state, inputsRef.current, simDt)
+          stepRivalGhosts(rivalGhostsRef.current, simDt)
           recorderRef.current.sample(state)
 
           audioRef.current?.update(
@@ -199,9 +201,9 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
           const recording = recorderRef.current.finish(state)
           const ms = recording.ms
           const resultId = crypto.randomUUID()
-          const ghostOk = saveGhostIfBest(course.id, recording)
+          // Record the PB first so ghost persistence can gate on bestTimes.
           const award = recordTimeOnce(resultId, course.id, ms)
-          // A new PB should persist a ghost; false means the write failed (or was skipped oddly).
+          const ghostOk = award.newBest ? saveGhostIfBest(course.id, recording) : true
           const ghostSaved = !award.newBest || ghostOk
           onFinishRef.current?.({ ms, resultId, award, ghostSaved })
         }

@@ -66,15 +66,21 @@ export default function PaintCanvas({
   // but not in response to our own onChange emissions.
   useEffect(() => {
     if (!imageDataUrl || imageDataUrl === lastEmittedRef.current) return
+    let cancelled = false
+    const emittedAtStart = lastEmittedRef.current
     const image = new Image()
     image.onload = () => {
+      if (cancelled) return
+      // User committed strokes while this Image was decoding — keep their work.
+      if (lastEmittedRef.current !== emittedAtStart) return
       const ctx = canvasRef.current?.getContext('2d')
       if (!ctx) return
       ctx.clearRect(0, 0, width, height)
       ctx.drawImage(image, 0, 0, width, height)
+      lastEmittedRef.current = imageDataUrl
     }
     image.src = imageDataUrl
-    lastEmittedRef.current = imageDataUrl
+    return () => { cancelled = true }
   }, [imageDataUrl, width, height])
 
   const canvasPoint = (event) => {

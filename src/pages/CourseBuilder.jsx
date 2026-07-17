@@ -51,11 +51,26 @@ const PALETTE_SECTIONS = [
 /* ---------- pure grid transforms (copy outer array + changed rows) ---------- */
 
 function withCell(grid, row, col, cell) {
+  const existing = grid[row][col]
+  if (existing == null && cell == null) return grid
+  if (
+    existing
+    && cell
+    && existing.piece === cell.piece
+    && existing.rotation === cell.rotation
+  ) {
+    return grid
+  }
   const nextRow = [...grid[row]]
   nextRow[col] = cell
   const next = [...grid]
   next[row] = nextRow
   return next
+}
+
+function eraseCell(grid, row, col) {
+  if (grid[row][col] == null) return grid
+  return withCell(grid, row, col, null)
 }
 
 /** Place a stamp; a second START anywhere becomes a STRAIGHT automatically. */
@@ -232,7 +247,7 @@ function CourseBuilderEditor() {
   /* ---------- edits ---------- */
   const applyAt = useCallback((row, col, { allowRotate }) => {
     if (stamp === ERASER) {
-      dispatch({ type: 'edit', transform: (grid) => withCell(grid, row, col, null) })
+      dispatch({ type: 'edit', transform: (grid) => eraseCell(grid, row, col) })
       return
     }
     dispatch({
@@ -308,7 +323,7 @@ function CourseBuilderEditor() {
       setCursorCell(cursor)
     } else if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault()
-      dispatch({ type: 'edit', transform: (grid) => withCell(grid, cursor.row, cursor.col, null) })
+      dispatch({ type: 'edit', transform: (grid) => eraseCell(grid, cursor.row, cursor.col) })
       setCursorCell(cursor)
     } else if (event.key.toLowerCase() === 'r') {
       event.preventDefault()

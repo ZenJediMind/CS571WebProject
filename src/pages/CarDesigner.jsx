@@ -91,10 +91,11 @@ export default function CarDesigner() {
   const [tool, setTool] = useState(PAINT_TOOLS.BRUSH)
   const [color, setColor] = useState('#c5050c')
   const [brushSize, setBrushSize] = useState(BRUSH_SIZES[1].size)
-  const [saved, setSaved] = useState(false)
+  const [persistedUrl, setPersistedUrl] = useState(() => loadPlayerCar().imageDataUrl)
   const [saveError, setSaveError] = useState(false)
 
-  const dirty = paint.history.length > 0 && !saved
+  // Dirty when the canvas differs from what is actually in storage (undo-safe).
+  const dirty = paint.current !== persistedUrl
   const allowNextNavigation = useUnsavedChangesGuard(
     dirty,
     'Leave without saving? Your car changes will be lost.',
@@ -106,7 +107,7 @@ export default function CarDesigner() {
       return
     }
     setSaveError(false)
-    setSaved(true)
+    setPersistedUrl(paint.current)
     allowNextNavigation()
     navigate('/')
   }
@@ -118,7 +119,6 @@ export default function CarDesigner() {
   const handleUseTemplate = (template) => {
     if (window.confirm(`Replace your current drawing with the ${template.name} template?`)) {
       dispatch({ type: 'replace', dataUrl: renderCarTemplateToDataUrl(template.id) })
-      setSaved(false)
     }
   }
 
@@ -204,7 +204,7 @@ export default function CarDesigner() {
             color={color}
             brushSize={brushSize}
             imageDataUrl={paint.current}
-            onChange={(dataUrl) => { dispatch({ type: 'change', dataUrl }); setSaved(false) }}
+            onChange={(dataUrl) => dispatch({ type: 'change', dataUrl })}
             onPickColor={setColor}
           />
           <div

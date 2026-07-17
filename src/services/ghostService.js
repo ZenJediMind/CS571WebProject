@@ -1,5 +1,6 @@
 // Best-run ghost recordings, one per course.
 import { readObject, writeKey } from './storage'
+import { getBestTime } from './scoreService'
 
 const GHOSTS_KEY = 'ghostLaps'
 
@@ -34,12 +35,19 @@ export function loadGhost(courseId) {
   return readGhosts()[courseId] ?? null
 }
 
-/** Persist only when this run beats the stored recording; false if the write failed. */
+/**
+ * Persist only when this run is a personal best (or ties it) and beats any
+ * stored ghost. Returns true when the ghost is stored or already as good;
+ * false only for invalid input or a failed write.
+ */
 export function saveGhostIfBest(courseId, recording) {
   if (!isValidGhost(recording)) return false
+  const bestTime = getBestTime(courseId)
+  // Never install a ghost slower than the stored personal best.
+  if (bestTime != null && recording.ms > bestTime) return true
   const all = readGhosts()
   const existing = all[courseId]
-  if (existing && existing.ms <= recording.ms) return false
+  if (existing && existing.ms <= recording.ms) return true
   return writeKey(GHOSTS_KEY, { ...all, [courseId]: recording })
 }
 

@@ -70,10 +70,12 @@ export function recordTime(courseId, ms) {
     newBest = writeKey(BEST_TIMES_KEY, { ...readBestTimes(), [courseId]: ms })
   }
 
-  const pointsEarned = beatenRivals.length * POINTS_PER_RIVAL_BEATEN
+  let pointsEarned = beatenRivals.length * POINTS_PER_RIVAL_BEATEN
     + (newBest ? POINTS_PER_NEW_BEST : 0)
-  // Points write may still fail; award info above remains accurate for the UI.
-  writeKey(POINTS_KEY, getTotalPoints() + pointsEarned)
+  // Only report points the UI can trust — a failed ledger write earns nothing.
+  if (pointsEarned > 0 && !writeKey(POINTS_KEY, getTotalPoints() + pointsEarned)) {
+    pointsEarned = 0
+  }
 
   return { pointsEarned, newBest, beatenRivals, previousBest }
 }

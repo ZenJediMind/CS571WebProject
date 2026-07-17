@@ -95,6 +95,19 @@ test('ramp launches airborne and lands back on track', () => {
   assert.ok([3, 4, 5, 6].includes(col), 'car must end up on/near the loop')
 })
 
+test('missed ramp landing does not immediately re-launch', () => {
+  const state = createRaceState(stripCourse(PIECES.RAMP, 5))
+  const launched = driveUntil(state, (s) => s.airborneMs > 0)
+  assert.ok(launched > 0, 'ramp at speed must launch the car')
+  // Force an off-track landing so landCar snaps back to lastSafe (the ramp).
+  state.x = -CELL_SIZE
+  state.y = -CELL_SIZE
+  const landed = driveUntil(state, (s) => s.airborneMs === 0)
+  assert.ok(landed > 0, 'flight must end after the miss')
+  press(state, { up: true }, 12)
+  assert.equal(state.airborneMs, 0, 'snap-back onto the ramp must not re-arm flight')
+})
+
 test('splits record at checkpoints and boostCount increments on Mad Town', async () => {
   const { createAutopilotCursor, autopilotInputs } = await loadGameModule('autopilot')
   const madTown = TEMPLATE_COURSES.find((c) => c.id === 'tpl-mad-town-gp')

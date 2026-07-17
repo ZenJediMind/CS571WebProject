@@ -77,14 +77,29 @@ export function getCourse(id) {
   return course ? { ...course, grid: cloneGrid(course.grid) } : null
 }
 
+/** True when a save changes race-affecting data (layout or theme grip). */
+function courseRaceDataChanged(previous, next) {
+  if (!previous) return false
+  const prevTheme = previous.theme ?? DEFAULT_THEME_ID
+  const nextTheme = next.theme ?? DEFAULT_THEME_ID
+  if (prevTheme !== nextTheme) return true
+  return JSON.stringify(previous.grid) !== JSON.stringify(next.grid)
+}
+
 export function saveCourse(course) {
   if (course.isTemplate) {
     throw new Error('Cannot overwrite a built-in template — Copy & Edit first.')
   }
   if (!isValidStoredCourse(course)) return null
+  const previous = findRawCourse(course.id)
   const toStore = { ...course, votes: 0, isTemplate: false }
   const others = readUserCourses().filter((existing) => existing.id !== course.id)
   if (!writeKey(COURSES_KEY, [...others, toStore])) return null
+  // Edited tracks invalidate times/ghosts recorded against the old layout.
+  if (courseRaceDataChanged(previous, toStore)) {
+    clearCourseBestTime(course.id)
+    clearCourseGhost(course.id)
+  }
   return toStore
 }
 

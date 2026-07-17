@@ -16,7 +16,7 @@ const PIT_MAX_SPEED = MAX_SPEED * 0.55
 const OBSTACLE_BOUNCE_FACTOR = -0.5
 const WALL_BOUNCE_FACTOR = -0.25
 const MAX_STEP_SECONDS = 0.05 // clamp long frames so physics stays stable
-const MAX_FRAME_SECONDS = 0.25 // longer gaps (tab switch, debugger) are a stall, not race time
+export const MAX_FRAME_SECONDS = 0.25 // longer gaps (tab switch, debugger) are a stall, not race time
 const CHECKPOINT_SPACING = 4 // every 4th path cell is a checkpoint
 
 const HANDBRAKE_MIN_SPEED = 90 // px/s needed before the rear kicks out
@@ -194,6 +194,10 @@ function landCar(state) {
     state.x = state.lastSafe.x
     state.y = state.lastSafe.y
     state.speed *= 0.5
+    // Mark the snap-back cell as already current so ramp/boost do not re-fire
+    // from teleporting onto the pad that launched this jump.
+    const landed = gridCellAt(state.x, state.y)
+    state.currentCellKey = cellKey(landed.row, landed.col)
   }
   // Sync ground-only cell state (oil/pit); checkpoints were tracked in flight.
   applyCellEffects(state)
