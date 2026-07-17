@@ -1,6 +1,6 @@
 // Player car persistence — the car is a PNG bitmap saved as a data URL.
-import { readObject, writeKey } from './storage'
-import { renderCarTemplateToDataUrl } from '../game/templates'
+import { readObject, writeKey } from './storage.js'
+import { renderCarTemplateToDataUrl } from '../game/templates.js'
 
 const CAR_KEY = 'playerCar'
 

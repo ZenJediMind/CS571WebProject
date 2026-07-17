@@ -1,7 +1,7 @@
 // Ghost cars: live autopilot rivals pace-matched to leaderboard times, and
 // recording/playback of the player's best run. Pure — data is injected.
-import { createRaceState, stepRace } from './engine'
-import { autopilotInputs, createAutopilotCursor } from './autopilot'
+import { createRaceState, stepRace } from './engine.js'
+import { autopilotInputs, createAutopilotCursor } from './autopilot.js'
 
 const RIVAL_GHOST_COLORS = ['#17a2b8', '#7d3c98']
 
@@ -9,22 +9,11 @@ const GHOST_STEP_SECONDS = 1 / 60
 const PACE_FACTOR_MIN = 0.4
 const PACE_FACTOR_MAX = 1.1
 
-/** courseId:theme:gridFingerprint → { naturalMs, factors: Map<targetMs, factor> } */
+/** courseId:theme:grid → { naturalMs, factors: Map<targetMs, factor> } */
 const rivalPaceCache = new Map()
 
-function gridFingerprint(grid) {
-  let hash = 2166136261
-  for (const row of grid) {
-    for (const cell of row) {
-      hash ^= cell ? (cell.piece.charCodeAt(0) + cell.rotation) : 0
-      hash = Math.imul(hash, 16777619) >>> 0
-    }
-  }
-  return hash.toString(36)
-}
-
 function paceCacheKey(course) {
-  return `${course.id}:${course.theme ?? ''}:${gridFingerprint(course.grid)}`
+  return `${course.id}:${course.theme ?? ''}:${JSON.stringify(course.grid)}`
 }
 
 /** Fast-forward an autopilot run to measure its finish time on this course. */

@@ -1,7 +1,7 @@
 // Steer-to-next-path-cell driver: throttles on straights, brakes into
 // corners, reverses out when pinned. Drives rival ghosts and test runs.
-import { CELL_SIZE } from './courseModel'
-import { MAX_SPEED } from './engine'
+import { CELL_SIZE } from './courseModel.js'
+import { MAX_SPEED } from './engine.js'
 
 const cellCenter = (cell) => ({ x: (cell.col + 0.5) * CELL_SIZE, y: (cell.row + 0.5) * CELL_SIZE })
 const normalizeAngle = (angle) => Math.atan2(Math.sin(angle), Math.cos(angle))

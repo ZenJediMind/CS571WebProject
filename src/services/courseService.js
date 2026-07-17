@@ -1,19 +1,21 @@
 // Course CRUD over localStorage plus the built-in templates.
 // Stored courses never persist hydrated votes — votes live in their own key.
-import { readArray, readObject, writeKey } from './storage'
-import { clearCourseGhost } from './ghostService'
-import { clearCourseBestTime } from './scoreService'
+import { readArray, readObject, writeKey } from './storage.js'
+import { clearCourseGhost } from './ghostService.js'
+import { clearCourseBestTime } from './scoreService.js'
 import {
   GRID_COLS, GRID_ROWS, PIECES, ROTATIONS, createEmptyGrid,
-} from '../game/courseModel'
-import { TEMPLATE_COURSES } from '../game/templates'
-import { DEFAULT_THEME_ID } from '../game/themes'
+} from '../game/courseModel.js'
+import { TEMPLATE_COURSES } from '../game/templates.js'
+import { DEFAULT_THEME_ID, THEMES } from '../game/themes.js'
 
 const COURSES_KEY = 'courses'
 const VOTES_KEY = 'votes'
 
 const VALID_PIECES = new Set(Object.values(PIECES))
 const VALID_ROTATIONS = new Set(ROTATIONS)
+const VALID_THEME_IDS = new Set(THEMES.map((theme) => theme.id))
+const TEMPLATE_IDS = new Set(TEMPLATE_COURSES.map((course) => course.id))
 
 function isValidCell(cell) {
   if (cell == null) return true
@@ -35,12 +37,27 @@ function isValidGrid(grid) {
 function isValidStoredCourse(course) {
   return Boolean(course)
     && typeof course.id === 'string'
+    && course.id.length > 0
     && typeof course.name === 'string'
+    && course.name.trim().length > 0
+    && typeof course.author === 'string'
+    && course.isTemplate === false
+    && (course.theme == null || VALID_THEME_IDS.has(course.theme))
+    && (course.votes == null || (
+      typeof course.votes === 'number'
+      && Number.isFinite(course.votes)
+      && course.votes >= 0
+    ))
     && isValidGrid(course.grid)
 }
 
 function readUserCourses() {
-  return readArray(COURSES_KEY, []).filter(isValidStoredCourse)
+  const seenIds = new Set(TEMPLATE_IDS)
+  return readArray(COURSES_KEY, []).filter((course) => {
+    if (!isValidStoredCourse(course) || seenIds.has(course.id)) return false
+    seenIds.add(course.id)
+    return true
+  })
 }
 
 function readVotes() {
@@ -90,7 +107,7 @@ export function saveCourse(course) {
   if (course.isTemplate) {
     throw new Error('Cannot overwrite a built-in template — Copy & Edit first.')
   }
-  if (!isValidStoredCourse(course)) return null
+  if (!isValidStoredCourse(course) || TEMPLATE_IDS.has(course.id)) return null
   const previous = findRawCourse(course.id)
   const toStore = { ...course, votes: 0, isTemplate: false }
   const others = readUserCourses().filter((existing) => existing.id !== course.id)
@@ -142,7 +159,7 @@ export function deleteCourse(id) {
 }
 
 export function voteForCourse(id) {
-  if (!findRawCourse(id)) return
+  if (!findRawCourse(id)) return false
   const votes = readVotes()
-  writeKey(VOTES_KEY, { ...votes, [id]: (votes[id] ?? 0) + 1 })
+  return writeKey(VOTES_KEY, { ...votes, [id]: (votes[id] ?? 0) + 1 })
 }

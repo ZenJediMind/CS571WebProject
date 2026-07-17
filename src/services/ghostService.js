@@ -1,6 +1,6 @@
 // Best-run ghost recordings, one per course.
-import { readObject, writeKey } from './storage'
-import { getBestTime } from './scoreService'
+import { readObject, writeKey } from './storage.js'
+import { getBestTime } from './scoreService.js'
 
 const GHOSTS_KEY = 'ghostLaps'
 

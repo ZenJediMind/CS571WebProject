@@ -1,8 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { THEMES, DEFAULT_THEME_ID, getTheme } = await loadGameModule('themes')
+import { THEMES, DEFAULT_THEME_ID, getTheme } from '../src/game/themes.js'
 
 test('every theme has the required shape', () => {
   for (const theme of THEMES) {

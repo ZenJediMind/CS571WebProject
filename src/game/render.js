@@ -1,9 +1,9 @@
 // Canvas drawing for tracks and race frames. Piece art is flat vector:
 // asphalt ribbon, red/white curbs, dashed centerline, checkered start,
 // cheddar boost chevrons, barrier obstacles, blue pit box.
-import { CELL_SIZE, GRID_COLS, GRID_ROWS, PIECES } from './courseModel'
-import { mulberry32 } from './rng'
-import { getTheme, DEFAULT_THEME_ID } from './themes'
+import { CELL_SIZE, GRID_COLS, GRID_ROWS, PIECES } from './courseModel.js'
+import { mulberry32 } from './rng.js'
+import { getTheme, DEFAULT_THEME_ID } from './themes.js'
 
 export const COURSE_WIDTH = GRID_COLS * CELL_SIZE // 1024
 export const COURSE_HEIGHT = GRID_ROWS * CELL_SIZE // 640

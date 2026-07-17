@@ -5,11 +5,9 @@
 // human glance in the browser — this guards the code paths, not the art.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { THEMES } = await loadGameModule('themes')
-const { drawTrackPiece, drawCourseInto } = await loadGameModule('render')
-const { PIECES, createEmptyGrid } = await loadGameModule('courseModel')
+import { THEMES } from '../src/game/themes.js'
+import { drawTrackPiece, drawCourseInto } from '../src/game/render.js'
+import { PIECES, createEmptyGrid } from '../src/game/courseModel.js'
 
 /** No-op Canvas 2D stand-in that records every fillRect with its fillStyle. */
 function makeCtx() {

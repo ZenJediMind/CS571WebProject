@@ -1,9 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { createEmptyGrid, PIECES, derivePath, validateCourse } = await loadGameModule('courseModel')
-const { TEMPLATE_COURSES } = await loadGameModule('templates')
+import {
+  createEmptyGrid, PIECES, derivePath, isDrivable, openEdges, validateCourse,
+} from '../src/game/courseModel.js'
+import { TEMPLATE_COURSES } from '../src/game/templates.js'
 
 function rectangleGrid() {
   const grid = createEmptyGrid()
@@ -51,9 +51,8 @@ test('start rotation selects the race direction', () => {
   assert.deepEqual(derivePath(westward)[1], { row: 2, col: 3 })
 })
 
-test('oil and ramp behave as straight-family connectivity', async () => {
-  const { openEdges, isDrivable, PIECES: P } = await loadGameModule('courseModel')
-  for (const piece of [P.OIL, P.RAMP]) {
+test('oil and ramp behave as straight-family connectivity', () => {
+  for (const piece of [PIECES.OIL, PIECES.RAMP]) {
     assert.deepEqual([...openEdges(piece, 90)].sort(), ['E', 'W'])
     assert.equal(isDrivable(piece), true)
   }

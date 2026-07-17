@@ -1,10 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { CELL_SIZE, PIECES, createEmptyGrid } = await loadGameModule('courseModel')
-const { TEMPLATE_COURSES } = await loadGameModule('templates')
-const { createRaceState, stepRace } = await loadGameModule('engine')
+import { CELL_SIZE, PIECES, createEmptyGrid } from '../src/game/courseModel.js'
+import { TEMPLATE_COURSES } from '../src/game/templates.js'
+import { createRaceState, stepRace } from '../src/game/engine.js'
+import { createAutopilotCursor, autopilotInputs } from '../src/game/autopilot.js'
 
 // Long straight corridor rows 1..8 at col 5 turned into a loop is overkill —
 // use Mad Town GP (has oil + ramp on the loop) plus a synthetic strip where
@@ -108,8 +107,7 @@ test('missed ramp landing does not immediately re-launch', () => {
   assert.equal(state.airborneMs, 0, 'snap-back onto the ramp must not re-arm flight')
 })
 
-test('splits record at checkpoints and boostCount increments on Mad Town', async () => {
-  const { createAutopilotCursor, autopilotInputs } = await loadGameModule('autopilot')
+test('splits record at checkpoints and boostCount increments on Mad Town', () => {
   const madTown = TEMPLATE_COURSES.find((c) => c.id === 'tpl-mad-town-gp')
   const state = createRaceState(madTown)
   const cursor = createAutopilotCursor()

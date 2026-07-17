@@ -59,6 +59,7 @@ export default function Race() {
 
   const settings = useMemo(() => getSettings(), [])
   const [soundOn, setSoundOn] = useState(settings.sound)
+  const [settingsSaveError, setSettingsSaveError] = useState(false)
   const audioRef = useRef(null)
 
   useEffect(() => {
@@ -83,10 +84,9 @@ export default function Race() {
 
   const toggleSound = () => {
     audioRef.current?.init()
-    setSoundOn((prev) => {
-      saveSettings({ sound: !prev })
-      return !prev
-    })
+    const nextSoundOn = !soundOn
+    setSoundOn(nextSoundOn)
+    setSettingsSaveError(!saveSettings({ sound: nextSoundOn }))
   }
 
   // Preload the saved car bitmap once; fall back to the classic template on error.
@@ -250,6 +250,12 @@ export default function Race() {
           Pause
         </Button>
       </div>
+
+      {settingsSaveError && (
+        <Alert variant="warning" className="py-2" dismissible onClose={() => setSettingsSaveError(false)}>
+          Sound changed for this race, but browser storage could not save the setting.
+        </Alert>
+      )}
 
       {showTip && (
         <div className="wr-race-tip">

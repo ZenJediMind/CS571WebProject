@@ -411,6 +411,14 @@ function CourseBuilderEditor() {
   }
 
   const isEraser = stamp === ERASER
+  const cursorContents = cursorCell ? editor.grid[cursorCell.row][cursorCell.col] : null
+  const cursorStatus = cursorCell
+    ? `Row ${cursorCell.row + 1}, column ${cursorCell.col + 1}: ${
+      cursorContents
+        ? `${cursorContents.piece.replaceAll('_', ' ')}, ${cursorContents.rotation} degrees`
+        : 'empty'
+    }.`
+    : ''
 
   return (
     <Container fluid="xl" className="py-3">
@@ -565,8 +573,9 @@ function CourseBuilderEditor() {
             height={CANVAS_HEIGHT}
             className="wr-builder-canvas"
             tabIndex={0}
-            role="img"
+            role="application"
             aria-label={`Course editing grid, ${GRID_COLS} by ${GRID_ROWS} cells. Use arrow keys to move, Enter to place, Delete to erase, R to rotate.`}
+            aria-describedby="course-grid-status"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -574,6 +583,15 @@ function CourseBuilderEditor() {
             onKeyDown={handleCanvasKeyDown}
             onBlur={() => setCursorCell(null)}
           />
+          <div
+            id="course-grid-status"
+            className="visually-hidden"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {cursorStatus}
+          </div>
 
           <Alert
             variant={validation?.ok ? 'success' : 'warning'}

@@ -1,6 +1,6 @@
 // Built-in course grids (validated at module load) and vector car template
 // drawers — smooth flat top-down cars rasterized to bitmaps, per the prototype.
-import { createEmptyGrid, PIECES, validateCourse } from './courseModel'
+import { createEmptyGrid, PIECES, validateCourse } from './courseModel.js'
 
 export const CAR_CANVAS_SIZE = 512
 

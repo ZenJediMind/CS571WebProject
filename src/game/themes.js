@@ -7,7 +7,7 @@
 // cheap canvas primitives. Every random placement is seeded with mulberry32,
 // so a course paints identically on every redraw and the build stays
 // deterministic (no image assets, no Math.random).
-import { mulberry32 } from './rng'
+import { mulberry32 } from './rng.js'
 
 export const DEFAULT_THEME_ID = 'circuit'
 

@@ -1,8 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { mulberry32 } = await loadGameModule('rng')
+import { mulberry32 } from '../src/game/rng.js'
 
 test('mulberry32 is deterministic per seed', () => {
   const a = mulberry32(42)

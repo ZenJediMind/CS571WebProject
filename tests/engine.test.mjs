@@ -1,11 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { TEMPLATE_COURSES } = await loadGameModule('templates')
-const { createRaceState, stepRace } = await loadGameModule('engine')
-const { createAutopilotCursor, autopilotInputs } = await loadGameModule('autopilot')
-const { getTheme } = await loadGameModule('themes')
+import { TEMPLATE_COURSES } from '../src/game/templates.js'
+import { createRaceState, stepRace } from '../src/game/engine.js'
+import { createAutopilotCursor, autopilotInputs } from '../src/game/autopilot.js'
+import { getTheme } from '../src/game/themes.js'
 
 function runToFinish(course, maxSimSeconds = 180) {
   const state = createRaceState(course)

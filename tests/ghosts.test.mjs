@@ -1,13 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loadGameModule } from './helpers.mjs'
-
-const { TEMPLATE_COURSES } = await loadGameModule('templates')
-const { createRaceState, stepRace } = await loadGameModule('engine')
-const { createAutopilotCursor, autopilotInputs } = await loadGameModule('autopilot')
-const {
+import { TEMPLATE_COURSES } from '../src/game/templates.js'
+import { createRaceState, stepRace } from '../src/game/engine.js'
+import { createAutopilotCursor, autopilotInputs } from '../src/game/autopilot.js'
+import { PIECES } from '../src/game/courseModel.js'
+import {
   simulateRunMs, createRivalGhosts, stepRivalGhosts, createGhostRecorder, ghostPoseAt,
-} = await loadGameModule('ghosts')
+} from '../src/game/ghosts.js'
 
 const ring = TEMPLATE_COURSES[0]
 
@@ -29,6 +28,28 @@ test('stepRivalGhosts advances deterministically to a finish', () => {
   const first = run()
   assert.ok(first > 0)
   assert.equal(run(), first)
+})
+
+test('rival pace cache distinguishes tracks that share an id', () => {
+  const original = { ...ring, id: 'cache-key-regression' }
+  const grid = structuredClone(ring.grid)
+  const start = grid.flat().find((cell) => cell?.piece === PIECES.START)
+  const replacement = grid.flat().find((cell) => (
+    cell?.piece === PIECES.STRAIGHT && cell.rotation === start.rotation
+  ))
+  start.piece = PIECES.STRAIGHT
+  replacement.piece = PIECES.START
+
+  const changed = { ...original, grid }
+  const targetMs = simulateRunMs(changed, 1) * 1.35
+  createRivalGhosts(original, [{ id: 'r', name: 'R', ms: targetMs }], 1)
+  const cachedFactor = createRivalGhosts(changed, [{ id: 'r', name: 'R', ms: targetMs }], 1)[0].state.maxSpeedFactor
+  const freshFactor = createRivalGhosts(
+    { ...changed, id: 'cache-key-control' },
+    [{ id: 'r', name: 'R', ms: targetMs }],
+    1,
+  )[0].state.maxSpeedFactor
+  assert.equal(cachedFactor, freshFactor)
 })
 
 test('recorder + interpolation round-trip', () => {

@@ -1,7 +1,7 @@
 // Mocked multiplayer invite flow (instructor-approved): a deterministic,
 // persistent invite code plus a canned lobby roster.
-import { readKey, writeKey } from './storage'
-import { hashString } from './scoreService'
+import { readKey, writeKey } from './storage.js'
+import { hashString } from './scoreService.js'
 
 const INVITE_CODE_KEY = 'inviteCode'
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789' // no lookalike chars
