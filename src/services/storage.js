@@ -19,3 +19,16 @@ export function writeKey(key, value) {
     return false // quota exceeded, private mode, or storage disabled
   }
 }
+
+/** Read a stored array; corrupt or non-array values fall back. */
+export function readArray(key, fallback = []) {
+  const value = readKey(key, fallback)
+  return Array.isArray(value) ? value : fallback
+}
+
+/** Read a plain object map; corrupt or non-object values fall back. */
+export function readObject(key, fallback = {}) {
+  const value = readKey(key, fallback)
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) return fallback
+  return value
+}

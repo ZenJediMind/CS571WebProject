@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Alert from 'react-bootstrap/Alert'
 import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
@@ -10,6 +11,7 @@ import { copyCourse, deleteCourse, listCourses, voteForCourse } from '../service
 export default function CourseBrowser() {
   const navigate = useNavigate()
   const [courses, setCourses] = useState([])
+  const [copyError, setCopyError] = useState(null)
 
   useEffect(() => {
     setCourses(listCourses())
@@ -23,7 +25,12 @@ export default function CourseBrowser() {
 
   const handleCopy = (courseId) => {
     const copy = copyCourse(courseId)
-    if (copy) navigate(`/build/${copy.id}`)
+    if (!copy) {
+      setCopyError('Could not copy this course. Browser storage may be full or unavailable.')
+      return
+    }
+    setCopyError(null)
+    navigate(`/build/${copy.id}`)
   }
 
   const handleDelete = (course) => {
@@ -39,6 +46,11 @@ export default function CourseBrowser() {
       <p className="text-secondary">
         Browse built-in and locally saved courses. Votes and edits stay on this device.
       </p>
+      {copyError && (
+        <Alert variant="danger" dismissible onClose={() => setCopyError(null)}>
+          {copyError}
+        </Alert>
+      )}
       <Row xs={1} sm={2} lg={3} className="g-3">
         {courses.map((course) => (
           <Col key={course.id}>

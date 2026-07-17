@@ -9,6 +9,24 @@ const GHOST_STEP_SECONDS = 1 / 60
 const PACE_FACTOR_MIN = 0.4
 const PACE_FACTOR_MAX = 1.1
 
+/** courseId:theme:gridFingerprint → { naturalMs, factors: Map<targetMs, factor> } */
+const rivalPaceCache = new Map()
+
+function gridFingerprint(grid) {
+  let hash = 2166136261
+  for (const row of grid) {
+    for (const cell of row) {
+      hash ^= cell ? (cell.piece.charCodeAt(0) + cell.rotation) : 0
+      hash = Math.imul(hash, 16777619) >>> 0
+    }
+  }
+  return hash.toString(36)
+}
+
+function paceCacheKey(course) {
+  return `${course.id}:${course.theme ?? ''}:${gridFingerprint(course.grid)}`
+}
+
 /** Fast-forward an autopilot run to measure its finish time on this course. */
 export function simulateRunMs(course, maxSpeedFactor = 1, maxSimSeconds = 240) {
   const state = createRaceState(course, { maxSpeedFactor })
@@ -38,23 +56,38 @@ function paceFactorFor(course, naturalMs, targetMs) {
   return factor
 }
 
+function getPaceCache(course) {
+  const key = paceCacheKey(course)
+  let entry = rivalPaceCache.get(key)
+  if (!entry) {
+    entry = { naturalMs: simulateRunMs(course, 1), factors: new Map() }
+    rivalPaceCache.set(key, entry)
+  }
+  return entry
+}
+
 /** Up to `count` fastest rivals as live-driven ghost race states. */
 export function createRivalGhosts(course, rivalTimes, count = 2) {
-  const naturalMs = simulateRunMs(course, 1)
-  if (!naturalMs) return []
+  const cache = getPaceCache(course)
+  if (!cache.naturalMs) return []
   return [...rivalTimes]
     .sort((a, b) => a.ms - b.ms)
     .slice(0, count)
-    .map((rival, index) => ({
-      id: rival.id,
-      name: rival.name,
-      color: RIVAL_GHOST_COLORS[index % RIVAL_GHOST_COLORS.length],
-      state: createRaceState(course, {
-        maxSpeedFactor: paceFactorFor(course, naturalMs, rival.ms),
-      }),
-      cursor: createAutopilotCursor(),
-      accumulator: 0,
-    }))
+    .map((rival, index) => {
+      let factor = cache.factors.get(rival.ms)
+      if (factor == null) {
+        factor = paceFactorFor(course, cache.naturalMs, rival.ms)
+        cache.factors.set(rival.ms, factor)
+      }
+      return {
+        id: rival.id,
+        name: rival.name,
+        color: RIVAL_GHOST_COLORS[index % RIVAL_GHOST_COLORS.length],
+        state: createRaceState(course, { maxSpeedFactor: factor }),
+        cursor: createAutopilotCursor(),
+        accumulator: 0,
+      }
+    })
 }
 
 /** Advance rival ghosts on a fixed timestep so their runs are deterministic. */
@@ -88,13 +121,16 @@ const lerp = (a, b, t) => a + (b - a) * t
 
 /** Interpolated ghost pose at race time, or null once the recording ends. */
 export function ghostPoseAt(recording, elapsedMs) {
-  if (!recording || elapsedMs > recording.ms) return null
+  if (!recording?.samples?.length || elapsedMs > recording.ms) return null
   const exact = elapsedMs / recording.sampleMs
   const index = Math.min(Math.floor(exact), recording.samples.length - 1)
   const next = Math.min(index + 1, recording.samples.length - 1)
+  const a = recording.samples[index]
+  const b = recording.samples[next]
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length < 3 || b.length < 3) return null
   const t = exact - index
-  const [x0, y0, h0] = recording.samples[index]
-  const [x1, y1, h1] = recording.samples[next]
+  const [x0, y0, h0] = a
+  const [x1, y1, h1] = b
   // Shortest-arc heading interpolation
   const delta = Math.atan2(Math.sin((h1 - h0) / 1000), Math.cos((h1 - h0) / 1000))
   return { x: lerp(x0, x1, t), y: lerp(y0, y1, t), heading: h0 / 1000 + delta * t }

@@ -149,6 +149,20 @@ function moveWithCollisions(state, dt) {
   state.speed *= bounce
 }
 
+function applyCheckpointProgress(state, key, enteredNewCell) {
+  if (!enteredNewCell) return
+  const target = state.checkpoints[state.nextCheckpoint]
+  if (target && key === target.key) {
+    state.nextCheckpoint += 1
+    state.splits.push(state.elapsedMs)
+  } else if (key === state.startKey && state.nextCheckpoint === state.checkpoints.length) {
+    state.splits.push(state.elapsedMs)
+    state.lap += 1
+    state.nextCheckpoint = 0
+    if (state.lap >= state.totalLaps) state.finished = true
+  }
+}
+
 function applyCellEffects(state) {
   const { row, col } = gridCellAt(state.x, state.y)
   const piece = pieceAt(state.grid, row, col)
@@ -169,18 +183,7 @@ function applyCellEffects(state) {
     state.airborneMs = AIRBORNE_BASE_MS * speedRatio
   }
 
-  if (!enteredNewCell) return
-
-  const target = state.checkpoints[state.nextCheckpoint]
-  if (target && key === target.key) {
-    state.nextCheckpoint += 1
-    state.splits.push(state.elapsedMs)
-  } else if (key === state.startKey && state.nextCheckpoint === state.checkpoints.length) {
-    state.splits.push(state.elapsedMs)
-    state.lap += 1
-    state.nextCheckpoint = 0
-    if (state.lap >= state.totalLaps) state.finished = true
-  }
+  applyCheckpointProgress(state, key, enteredNewCell)
 }
 
 function landCar(state) {
@@ -192,17 +195,25 @@ function landCar(state) {
     state.y = state.lastSafe.y
     state.speed *= 0.5
   }
+  // Sync ground-only cell state (oil/pit); checkpoints were tracked in flight.
+  applyCellEffects(state)
 }
 
 function advanceSubstep(state, inputs, dt) {
   state.elapsedMs += dt * 1000
 
   if (state.airborneMs > 0) {
-    // Flying: no control, no cell effects, sails over non-track cells
+    // Flying: no control/collisions, but checkpoints still count under the car.
     state.airborneMs -= dt * 1000
     state.x += Math.cos(state.heading) * state.speed * dt
     state.y += Math.sin(state.heading) * state.speed * dt
     state.drifting = false
+    state.onOil = false
+    const { row, col } = gridCellAt(state.x, state.y)
+    const key = cellKey(row, col)
+    const enteredNewCell = key !== state.currentCellKey
+    state.currentCellKey = key
+    applyCheckpointProgress(state, key, enteredNewCell)
     if (state.airborneMs <= 0) landCar(state)
     return
   }

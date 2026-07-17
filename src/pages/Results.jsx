@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import Badge from 'react-bootstrap/Badge'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
@@ -14,15 +14,16 @@ export default function Results() {
   const location = useLocation()
   const course = useMemo(() => getCourse(courseId), [courseId])
 
-  const { ms, resultId } = location.state ?? {}
-  const [award, setAward] = useState(null)
+  const { ms, resultId, award: passedAward } = location.state ?? {}
 
-  useEffect(() => {
-    if (ms && resultId) setAward(recordTimeOnce(resultId, courseId, ms))
-  }, [ms, resultId, courseId])
+  // Award during render (idempotent) so Best/Points never flash empty defaults.
+  const award = useMemo(() => {
+    if (ms == null || !resultId) return null
+    return passedAward ?? recordTimeOnce(resultId, courseId, ms)
+  }, [ms, resultId, courseId, passedAward])
 
   // Deep-linked here without a finished race — nothing to show
-  if (!ms || !resultId || !course) return <Navigate to="/browse" replace />
+  if (ms == null || !resultId || !course) return <Navigate to="/browse" replace />
 
   const bestMs = award?.newBest ? ms : award?.previousBest
   return (

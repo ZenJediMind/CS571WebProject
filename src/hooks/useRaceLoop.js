@@ -8,7 +8,7 @@ import {
   createGhostRecorder, createRivalGhosts, ghostPoseAt, stepRivalGhosts,
 } from '../game/ghosts'
 import { loadGhost, saveGhostIfBest } from '../services/ghostService'
-import { getRivalTimes } from '../services/scoreService'
+import { getRivalTimes, recordTimeOnce } from '../services/scoreService'
 import { GHOST_MODES } from '../services/settingsService'
 
 const KEY_BINDINGS = {
@@ -19,6 +19,7 @@ const KEY_BINDINGS = {
   Space: 'handbrake',
 }
 
+const EMPTY_INPUTS = { up: false, down: false, left: false, right: false, handbrake: false }
 const HUD_INTERVAL_MS = 100 // ~10Hz — HUD re-renders stay off the 60fps hot path
 const OIL_SKID_MIN_SPEED = 120
 
@@ -39,7 +40,8 @@ const hudSnapshot = (state, split) => ({
  */
 export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, settings, audioRef }) {
   const raceStateRef = useRef(null)
-  const inputsRef = useRef({ up: false, down: false, left: false, right: false, handbrake: false })
+  const heldKeysRef = useRef({ ...EMPTY_INPUTS })
+  const inputsRef = useRef({ ...EMPTY_INPUTS })
   const finishSentRef = useRef(false)
   const onFinishRef = useRef(onFinish)
   onFinishRef.current = onFinish
@@ -86,21 +88,19 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
   // (Re)build race state when the course loads or changes
   useEffect(() => { restart() }, [restart])
 
-  // Keyboard: arrows + WASD + Space handbrake; prevent page scroll
+  // Always track physical key state; only feed the sim while racing.
   useEffect(() => {
-    const setInput = (pressed) => (event) => {
+    const setHeld = (pressed) => (event) => {
       const control = KEY_BINDINGS[event.code]
       if (!control) return
-      if (!racing) {
-        inputsRef.current[control] = false
-        return
-      }
+      heldKeysRef.current[control] = pressed
+      if (!racing) return
       event.preventDefault()
       inputsRef.current[control] = pressed
       if (pressed) audioRef.current?.init() // user gesture: safe to start audio
     }
-    const handleKeyDown = setInput(true)
-    const handleKeyUp = setInput(false)
+    const handleKeyDown = setHeld(true)
+    const handleKeyUp = setHeld(false)
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     return () => {
@@ -108,6 +108,11 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
       window.removeEventListener('keyup', handleKeyUp)
     }
   }, [audioRef, racing])
+
+  // Sync held keys into the sim when racing starts/resumes; clear while paused.
+  useEffect(() => {
+    inputsRef.current = racing ? { ...heldKeysRef.current } : { ...EMPTY_INPUTS }
+  }, [racing])
 
   // The render/simulation loop — only animates while racing
   useEffect(() => {
@@ -190,8 +195,12 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
 
         if (state.finished && !finishSentRef.current) {
           finishSentRef.current = true
-          saveGhostIfBest(course.id, recorderRef.current.finish(state))
-          onFinishRef.current?.(state.elapsedMs)
+          const recording = recorderRef.current.finish(state)
+          const ms = recording.ms
+          const resultId = crypto.randomUUID()
+          saveGhostIfBest(course.id, recording)
+          const award = recordTimeOnce(resultId, course.id, ms)
+          onFinishRef.current?.({ ms, resultId, award })
         }
       }
       frameId = requestAnimationFrame(frame)

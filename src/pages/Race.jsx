@@ -5,7 +5,7 @@ import Container from 'react-bootstrap/Container'
 import Modal from 'react-bootstrap/Modal'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getCourse } from '../services/courseService'
-import { loadPlayerCar } from '../services/carService'
+import { defaultCarDataUrl, loadPlayerCar } from '../services/carService'
 import { validateCourse } from '../game/courseModel'
 import { COURSE_WIDTH, COURSE_HEIGHT } from '../game/render'
 import { RaceAudio } from '../game/audio'
@@ -16,20 +16,40 @@ import { useRaceLoop } from '../hooks/useRaceLoop'
 const COUNTDOWN_START = 3
 const COUNTDOWN_TICK_MS = 800
 const GO_FLASH_MS = 700
+const NARROW_QUERY = '(max-width: 767.98px)'
 
 /** Playful arcade speedometer: converts px/s to a mph-looking number. */
 const displayMph = (pxPerSecond) => Math.round(pxPerSecond / 3.2)
+
+function useIsNarrowScreen() {
+  const [isNarrow, setIsNarrow] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia(NARROW_QUERY).matches
+  ))
+
+  useEffect(() => {
+    const media = window.matchMedia(NARROW_QUERY)
+    const update = () => setIsNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+
+  return isNarrow
+}
 
 export default function Race() {
   const { courseId } = useParams()
   const navigate = useNavigate()
   const canvasRef = useRef(null)
+  const isNarrow = useIsNarrowScreen()
 
   const course = useMemo(() => getCourse(courseId), [courseId])
   const courseCheck = useMemo(
     () => (course ? validateCourse(course.grid) : null),
     [course],
   )
+  const courseReady = Boolean(course && courseCheck?.ok)
+  const canRace = courseReady && !isNarrow
 
   const [carImage, setCarImage] = useState(null)
   const [countdown, setCountdown] = useState(COUNTDOWN_START)
@@ -57,15 +77,26 @@ export default function Race() {
     })
   }
 
-  // Preload the saved car bitmap once
+  // Preload the saved car bitmap once; fall back to the classic template on error.
   useEffect(() => {
+    let cancelled = false
+    let usedFallback = false
     const image = new Image()
-    image.onload = () => setCarImage(image)
+    image.onload = () => {
+      if (!cancelled) setCarImage(image)
+    }
+    image.onerror = () => {
+      if (cancelled || usedFallback) return
+      usedFallback = true
+      image.src = defaultCarDataUrl()
+    }
     image.src = loadPlayerCar().imageDataUrl
+    return () => { cancelled = true }
   }, [])
 
-  // 3-2-1 countdown, then a brief GO! flash
+  // 3-2-1 countdown, then a brief GO! flash — only for raceable desktop sessions.
   useEffect(() => {
+    if (!canRace) return undefined
     if (countdown === 0) {
       setShowGo(true)
       audioRef.current?.countdownBeep(true)
@@ -75,16 +106,16 @@ export default function Race() {
     audioRef.current?.countdownBeep(false)
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), COUNTDOWN_TICK_MS)
     return () => clearTimeout(timer)
-  }, [countdown])
+  }, [countdown, canRace])
 
-  const handleFinish = useCallback((ms) => {
+  const handleFinish = useCallback(({ ms, resultId, award }) => {
     navigate(`/results/${courseId}`, {
-      state: { ms, resultId: crypto.randomUUID() },
+      state: { ms, resultId, award },
     })
   }, [navigate, courseId])
 
-  const racing = countdown === 0 && !paused
-  const { hud, restart } = useRaceLoop(canvasRef, courseCheck?.ok ? course : null, carImage, {
+  const racing = canRace && countdown === 0 && !paused
+  const { hud, restart } = useRaceLoop(canvasRef, canRace ? course : null, carImage, {
     racing,
     onFinish: handleFinish,
     settings,
@@ -103,11 +134,13 @@ export default function Race() {
   // One listener owns Escape; the modal's competing keyboard handler is disabled below.
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.code === 'Escape' && countdown === 0) setPaused((current) => !current)
+      if (event.code === 'Escape' && canRace && countdown === 0) {
+        setPaused((current) => !current)
+      }
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [countdown])
+  }, [canRace, countdown])
 
   const handleRestart = () => {
     restart()
@@ -132,6 +165,20 @@ export default function Race() {
           {course.name} is not raceable: {courseCheck.error}{' '}
           <Alert.Link as={Link} to="/browse">Back to Browse</Alert.Link>
         </Alert>
+      </Container>
+    )
+  }
+
+  if (isNarrow) {
+    return (
+      <Container className="py-4">
+        <Alert variant="warning" className="mb-3">
+          Wisconsin Racer needs a keyboard on a wider screen. Racing is disabled on this device size.
+        </Alert>
+        <div className="d-grid gap-2">
+          <Button as={Link} to="/browse" variant="primary">Browse Courses</Button>
+          <Button as={Link} to="/" variant="outline-secondary">Main Menu</Button>
+        </div>
       </Container>
     )
   }
@@ -174,12 +221,9 @@ export default function Race() {
         </Button>
       </div>
 
-      <Alert variant="light" className="py-2 mb-2 d-none d-md-block">
+      <Alert variant="light" className="py-2 mb-2">
         Steer with ← ↑ → ↓ (or WASD). Space = handbrake drift. Esc pauses.
         Hit the glowing checkpoints in order — 3 laps to finish!
-      </Alert>
-      <Alert variant="warning" className="py-2 mb-2 d-md-none">
-        Wisconsin Racer needs a keyboard — grab a bigger screen to race.
       </Alert>
 
       <div className="position-relative">

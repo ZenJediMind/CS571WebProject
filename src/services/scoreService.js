@@ -1,6 +1,6 @@
 // Best times, points ledger, and deterministic seeded rivals (the mock
 // "other players" every leaderboard and results screen compares against).
-import { readKey, writeKey } from './storage'
+import { readKey, readObject, writeKey } from './storage.js'
 
 const BEST_TIMES_KEY = 'bestTimes'
 const POINTS_KEY = 'points'
@@ -37,12 +37,22 @@ export function getRivalTimes(courseId) {
   }))
 }
 
+function readBestTimes() {
+  const raw = readObject(BEST_TIMES_KEY, {})
+  const times = {}
+  for (const [courseId, ms] of Object.entries(raw)) {
+    if (typeof ms === 'number' && Number.isFinite(ms) && ms >= 0) times[courseId] = ms
+  }
+  return times
+}
+
 export function getBestTime(courseId) {
-  return readKey(BEST_TIMES_KEY, {})[courseId] ?? null
+  return readBestTimes()[courseId] ?? null
 }
 
 export function getTotalPoints() {
-  return readKey(POINTS_KEY, 0)
+  const points = readKey(POINTS_KEY, 0)
+  return typeof points === 'number' && Number.isFinite(points) ? points : 0
 }
 
 /**
@@ -55,8 +65,7 @@ export function recordTime(courseId, ms) {
   const newBest = previousBest === null || ms < previousBest
 
   if (newBest) {
-    const bestTimes = readKey(BEST_TIMES_KEY, {})
-    writeKey(BEST_TIMES_KEY, { ...bestTimes, [courseId]: ms })
+    writeKey(BEST_TIMES_KEY, { ...readBestTimes(), [courseId]: ms })
   }
 
   const pointsEarned = beatenRivals.length * POINTS_PER_RIVAL_BEATEN
@@ -83,6 +92,14 @@ export function recordTimeOnce(resultId, courseId, ms) {
   return award
 }
 
+/** Drop the stored best time for a deleted course. */
+export function clearCourseBestTime(courseId) {
+  const times = readBestTimes()
+  if (!(courseId in times)) return true
+  const { [courseId]: _removed, ...rest } = times
+  return writeKey(BEST_TIMES_KEY, rest)
+}
+
 /** Rivals + the player's best (if any), sorted fastest first. */
 export function getCourseLeaderboard(courseId) {
   const rows = getRivalTimes(courseId)
@@ -107,8 +124,9 @@ export function getPointsRanking() {
 
 /** mm:ss.t display formatting for lap-set times. */
 export function formatMs(ms) {
-  const totalSeconds = ms / 1000
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds - minutes * 60
-  return `${minutes}:${seconds.toFixed(1).padStart(4, '0')}`
+  const totalTenths = Math.max(0, Math.round(Number(ms) / 100))
+  const minutes = Math.floor(totalTenths / 600)
+  const tenths = totalTenths % 600
+  const seconds = (tenths / 10).toFixed(1)
+  return `${minutes}:${seconds.padStart(4, '0')}`
 }
