@@ -174,6 +174,9 @@ export default function Race() {
     restart()
     setPaused(false)
     setCountdown(COUNTDOWN_START)
+    // Restarting inside the GO flash window clears the flash timer, so the
+    // flag must reset here or the green lamp stays lit through the countdown.
+    setShowGo(false)
   }
 
   if (!course) {

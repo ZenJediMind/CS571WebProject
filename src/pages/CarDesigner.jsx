@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
-import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
 import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
@@ -7,6 +6,7 @@ import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { useNavigate } from 'react-router-dom'
 import PaintCanvas from '../components/PaintCanvas'
+import StorageFullAlert from '../components/StorageFullAlert'
 import { PAINT_TOOLS } from '../components/paintTools'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { CAR_CANVAS_SIZE, CAR_TEMPLATES, renderCarTemplateToDataUrl } from '../game/templates'
@@ -145,10 +145,7 @@ export default function CarDesigner() {
       <div className="wr-checker mb-3" aria-hidden="true" />
 
       {saveError && (
-        <Alert variant="danger" dismissible onClose={() => setSaveError(false)}>
-          Couldn't save — browser storage is full or blocked. Your drawing is still here;
-          free up space (or leave private browsing) and try again.
-        </Alert>
+        <StorageFullAlert itemLabel="drawing" onClose={() => setSaveError(false)} />
       )}
 
       <Row className="g-3 align-items-start">

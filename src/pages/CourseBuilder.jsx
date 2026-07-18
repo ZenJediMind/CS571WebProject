@@ -9,6 +9,7 @@ import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PiecePreview from '../components/PiecePreview'
+import StorageFullAlert from '../components/StorageFullAlert'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { createEmptyGrid, GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
@@ -401,10 +402,7 @@ function CourseBuilderEditor() {
           </Button>
         </Alert>
         {saveError && (
-          <Alert variant="danger" dismissible onClose={() => setSaveError(false)} className="mt-3">
-            Couldn't save — browser storage is full or blocked. Your track is still here;
-            free up space (or leave private browsing) and try again.
-          </Alert>
+          <StorageFullAlert itemLabel="track" onClose={() => setSaveError(false)} className="mt-3" />
         )}
       </Container>
     )
@@ -471,10 +469,7 @@ function CourseBuilderEditor() {
       <div className="wr-checker mb-3" aria-hidden="true" />
 
       {saveError && (
-        <Alert variant="danger" dismissible onClose={() => setSaveError(false)}>
-          Couldn't save — browser storage is full or blocked. Your track is still here;
-          free up space (or leave private browsing) and try again.
-        </Alert>
+        <StorageFullAlert itemLabel="track" onClose={() => setSaveError(false)} />
       )}
 
       <Alert variant="light" className="py-2">

@@ -78,6 +78,27 @@ shape-validated before display.
 - Publishing guidance: the hash-based router, `/CS571WebProject/` Vite base, and
   committed `docs/` output remain GitHub Pages compatible.
 
+## Addendum — July 17, 2026
+
+A follow-up review with a live Playwright audit confirmed the July 16 fixes
+hold (Escape pause/resume, Space-key modal activation, keyboard course
+building, Test Drive history replacement, deep-link and unknown-route
+recovery, storage-failure feedback) and resolved three remaining issues:
+
+- Muted race audio when the canvas unmounts mid-race. Resizing under the
+  raceable breakpoint skipped the mute call, leaving the synthesized engine
+  hum playing; the loop's no-canvas path now silences it. Verified by spying
+  on gain automation before and after a narrow resize.
+- Reset the GO! flash on restart. Restarting from the pause modal inside the
+  700 ms flash window cleared the flash timer but left the green traffic lamp
+  lit through the next countdown. Verified by restarting during the flash.
+- Extracted the storage-full alert, which was pasted in three places, into
+  `StorageFullAlert`, and hoisted the duplicated per-frame skid condition in
+  the race loop.
+
+Verification: 43/43 tests, lint clean, build clean (418.10 kB raw JavaScript,
+slightly smaller than before the change).
+
 ## Deliberately not added
 
 - No Redux, TypeScript migration, backend, live multiplayer, service worker,

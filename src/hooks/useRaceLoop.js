@@ -118,7 +118,12 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
   // The render/simulation loop — only animates while racing
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !background) return undefined
+    if (!canvas || !background) {
+      // Canvas gone mid-race (e.g. resized under the raceable breakpoint):
+      // the AudioContext outlives it, so silence the engine explicitly.
+      audioRef.current?.update(0, false)
+      return undefined
+    }
 
     const ctx = canvas.getContext('2d')
 
@@ -164,10 +169,9 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
           stepRivalGhosts(rivalGhostsRef.current, simDt)
           recorderRef.current.sample(state)
 
-          audioRef.current?.update(
-            Math.abs(state.speed) / (MAX_SPEED * 1.25),
-            state.drifting || (state.onOil && Math.abs(state.speed) > OIL_SKID_MIN_SPEED),
-          )
+          const skidding = state.drifting
+            || (state.onOil && Math.abs(state.speed) > OIL_SKID_MIN_SPEED)
+          audioRef.current?.update(Math.abs(state.speed) / (MAX_SPEED * 1.25), skidding)
 
           if (state.boostCount !== lastBoostCountRef.current) {
             lastBoostCountRef.current = state.boostCount
@@ -175,7 +179,7 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
             audioRef.current?.boost()
           }
 
-          if (state.drifting || (state.onOil && Math.abs(state.speed) > OIL_SKID_MIN_SPEED)) {
+          if (skidding) {
             stampSkidMarks(marksRef.current.getContext('2d'), state)
           }
 
