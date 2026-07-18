@@ -553,6 +553,20 @@ body.wr-race-active {
   padding: 0.65rem;
 }
 
+/* Live preview of the brush diameter beside the size slider */
+.wr-brush-dot-box {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+}
+
+.wr-brush-dot {
+  border-radius: 50%;
+  background: var(--wr-asphalt);
+}
+
 .wr-car-template-thumb {
   width: 96px;
   height: 96px;

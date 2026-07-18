@@ -8,6 +8,8 @@ import CourseCard from '../components/CourseCard'
 import PageHeader from '../components/PageHeader'
 import { copyCourse, deleteCourse, listCourses, voteForCourse } from '../services/courseService'
 
+const storageIssue = (action) => `Could not ${action}. Browser storage may be full or unavailable.`
+
 export default function CourseBrowser() {
   const navigate = useNavigate()
   const [courses, setCourses] = useState([])
@@ -20,7 +22,7 @@ export default function CourseBrowser() {
   // localStorage writes never re-render — re-read into state after voting
   const handleVote = (courseId) => {
     if (!voteForCourse(courseId)) {
-      setError('Could not save your vote. Browser storage may be full or unavailable.')
+      setError(storageIssue('save your vote'))
       return
     }
     setError(null)
@@ -30,7 +32,7 @@ export default function CourseBrowser() {
   const handleCopy = (courseId) => {
     const copy = copyCourse(courseId)
     if (!copy) {
-      setError('Could not copy this course. Browser storage may be full or unavailable.')
+      setError(storageIssue('copy this course'))
       return
     }
     setError(null)
@@ -40,7 +42,7 @@ export default function CourseBrowser() {
   const handleDelete = (course) => {
     if (!window.confirm(`Delete "${course.name}"? This can't be undone.`)) return
     if (!deleteCourse(course.id)) {
-      setError('Could not delete this course. Browser storage may be full or unavailable.')
+      setError(storageIssue('delete this course'))
       return
     }
     setError(null)

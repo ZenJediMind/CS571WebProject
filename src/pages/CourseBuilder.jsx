@@ -7,7 +7,8 @@ import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import CourseNotFound from '../components/CourseNotFound'
 import PiecePreview from '../components/PiecePreview'
 import StorageFullAlert from '../components/StorageFullAlert'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
@@ -373,15 +374,7 @@ function CourseBuilderEditor() {
   }
 
   /* ---------- guards ---------- */
-  if (!course) {
-    return (
-      <Container className="py-4">
-        <Alert variant="warning">
-          Course not found. <Alert.Link as={Link} to="/browse">Back to Browse</Alert.Link>
-        </Alert>
-      </Container>
-    )
-  }
+  if (!course) return <CourseNotFound />
 
   if (course.isTemplate) {
     return (

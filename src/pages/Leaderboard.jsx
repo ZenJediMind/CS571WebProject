@@ -8,6 +8,32 @@ import PageHeader from '../components/PageHeader'
 import { listCourses } from '../services/courseService'
 import { formatMs, getCourseLeaderboard, getPointsRanking } from '../services/scoreService'
 
+/** Pit-board ranking table: position, racer, car, and one value column. */
+function RankingTable({ rows, valueHeader, valueOf }) {
+  return (
+    <Table striped hover responsive className="wr-board-table mb-0">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Racer</th>
+          <th scope="col">Car</th>
+          <th scope="col">{valueHeader}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <tr key={row.id} className={row.isPlayer ? 'wr-row-you' : undefined}>
+            <td className="wr-mono">{index + 1}</td>
+            <td>{row.name}{row.isPlayer && ' ★'}</td>
+            <td>{row.car}</td>
+            <td className="wr-mono">{valueOf(row)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
+  )
+}
+
 export default function Leaderboard() {
   const [courses, setCourses] = useState([])
   const [selectedCourseId, setSelectedCourseId] = useState('')
@@ -42,26 +68,7 @@ export default function Leaderboard() {
               ))}
             </Form.Select>
           </Form.Group>
-          <Table striped hover responsive className="wr-board-table mb-0">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Racer</th>
-                <th scope="col">Car</th>
-                <th scope="col">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {times.map((row, index) => (
-                <tr key={row.id} className={row.isPlayer ? 'wr-row-you' : undefined}>
-                  <td className="wr-mono">{index + 1}</td>
-                  <td>{row.name}{row.isPlayer && ' ★'}</td>
-                  <td>{row.car}</td>
-                  <td className="wr-mono">{formatMs(row.ms)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <RankingTable rows={times} valueHeader="Time" valueOf={(row) => formatMs(row.ms)} />
           {!times.some((row) => row.isPlayer) && (
             <p className="text-secondary mt-3">
               Finish a race on this course to put yourself on the board!
@@ -69,26 +76,7 @@ export default function Leaderboard() {
           )}
         </Tab>
         <Tab eventKey="points" title="Overall Points">
-          <Table striped hover responsive className="wr-board-table mb-0">
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Racer</th>
-                <th scope="col">Car</th>
-                <th scope="col">Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranking.map((row, index) => (
-                <tr key={row.id} className={row.isPlayer ? 'wr-row-you' : undefined}>
-                  <td className="wr-mono">{index + 1}</td>
-                  <td>{row.name}{row.isPlayer && ' ★'}</td>
-                  <td>{row.car}</td>
-                  <td className="wr-mono">{row.points}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <RankingTable rows={ranking} valueHeader="Points" valueOf={(row) => row.points} />
           <p className="text-secondary mt-3">
             Earn +10 points for every rival you out-race and +5 for a new personal best.
           </p>

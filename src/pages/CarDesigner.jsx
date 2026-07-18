@@ -5,6 +5,7 @@ import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
 import { useNavigate } from 'react-router-dom'
+import PageHeader from '../components/PageHeader'
 import PaintCanvas from '../components/PaintCanvas'
 import StorageFullAlert from '../components/StorageFullAlert'
 import { PAINT_TOOLS } from '../components/paintTools'
@@ -23,11 +24,7 @@ const TOOLBOX = [
   { tool: PAINT_TOOLS.EYEDROPPER, icon: '💧', label: 'Pick Color' },
 ]
 
-const BRUSH_SIZES = [
-  { label: 'Small', size: 6 },
-  { label: 'Medium', size: 14 },
-  { label: 'Large', size: 26 },
-]
+const BRUSH_SIZE = { min: 2, max: 40, step: 2, initial: 14 }
 
 const PALETTE = [
   { hex: '#000000', name: 'Black' }, { hex: '#555555', name: 'Dark gray' },
@@ -90,7 +87,7 @@ export default function CarDesigner() {
   }))
   const [tool, setTool] = useState(PAINT_TOOLS.BRUSH)
   const [color, setColor] = useState('#c5050c')
-  const [brushSize, setBrushSize] = useState(BRUSH_SIZES[1].size)
+  const [brushSize, setBrushSize] = useState(BRUSH_SIZE.initial)
   const [persistedUrl, setPersistedUrl] = useState(() => loadPlayerCar().imageDataUrl)
   const [saveError, setSaveError] = useState(false)
 
@@ -112,10 +109,6 @@ export default function CarDesigner() {
     navigate('/')
   }
 
-  const handleBack = () => {
-    navigate('/')
-  }
-
   const handleUseTemplate = (template) => {
     if (window.confirm(`Replace your current drawing with the ${template.name} template?`)) {
       dispatch({ type: 'replace', dataUrl: renderCarTemplateToDataUrl(template.id) })
@@ -124,14 +117,8 @@ export default function CarDesigner() {
 
   return (
     <Container fluid="xl" className="py-3 wr-car-studio">
-      <Row className="align-items-center g-2 mb-2">
-        <Col xs="auto">
-          <Button variant="outline-secondary" size="sm" onClick={handleBack}>← Back</Button>
-        </Col>
-        <Col>
-          <h1 className="h2 mb-0">Car Designer</h1>
-        </Col>
-        <Col xs="auto" className="d-flex align-items-center gap-2">
+      <PageHeader title="Car Designer">
+        <div className="d-flex align-items-center gap-2">
           <img
             src={paint.current}
             width={56}
@@ -140,9 +127,8 @@ export default function CarDesigner() {
             className="wr-car-race-preview"
           />
           <Button variant="primary" onClick={handleSave}>Save Car</Button>
-        </Col>
-      </Row>
-      <div className="wr-checker mb-3" aria-hidden="true" />
+        </div>
+      </PageHeader>
 
       {saveError && (
         <StorageFullAlert itemLabel="drawing" onClose={() => setSaveError(false)} />
@@ -168,18 +154,21 @@ export default function CarDesigner() {
             </div>
             <Form.Group className="mt-2 mb-2">
               <Form.Label htmlFor="brush-size" className="wr-panel-label mb-1">
-                Brush size
+                Brush size: {brushSize}px
               </Form.Label>
-              <Form.Select
-                id="brush-size"
-                size="sm"
-                value={brushSize}
-                onChange={(event) => setBrushSize(Number(event.target.value))}
-              >
-                {BRUSH_SIZES.map((option) => (
-                  <option key={option.size} value={option.size}>{option.label}</option>
-                ))}
-              </Form.Select>
+              <div className="d-flex align-items-center gap-2">
+                <Form.Range
+                  id="brush-size"
+                  min={BRUSH_SIZE.min}
+                  max={BRUSH_SIZE.max}
+                  step={BRUSH_SIZE.step}
+                  value={brushSize}
+                  onChange={(event) => setBrushSize(Number(event.target.value))}
+                />
+                <span className="wr-brush-dot-box" aria-hidden="true">
+                  <span className="wr-brush-dot" style={{ width: brushSize, height: brushSize }} />
+                </span>
+              </div>
             </Form.Group>
             <Button
               variant="outline-secondary"

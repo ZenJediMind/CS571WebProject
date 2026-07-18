@@ -4,6 +4,7 @@ import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
 import Modal from 'react-bootstrap/Modal'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import CourseNotFound from '../components/CourseNotFound'
 import { getCourse } from '../services/courseService'
 import { defaultCarDataUrl, loadPlayerCar } from '../services/carService'
 import { validateCourse } from '../game/courseModel'
@@ -179,15 +180,7 @@ export default function Race() {
     setShowGo(false)
   }
 
-  if (!course) {
-    return (
-      <Container className="py-4">
-        <Alert variant="warning">
-          Course not found. <Alert.Link as={Link} to="/browse">Back to Browse</Alert.Link>
-        </Alert>
-      </Container>
-    )
-  }
+  if (!course) return <CourseNotFound />
 
   if (!courseCheck.ok) {
     return (

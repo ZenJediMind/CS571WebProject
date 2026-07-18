@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
 import { useNavigate } from 'react-router-dom'
 import { validateCourse } from '../game/courseModel'
-import { drawCourseThumbnail } from '../game/render'
+import CourseThumbnail from './CourseThumbnail'
 
 const THUMBNAIL_WIDTH = 320
 
@@ -13,21 +13,15 @@ const THUMBNAIL_WIDTH = 320
  */
 export default function CourseCard({ course, onVote, onCopy, onDelete }) {
   const navigate = useNavigate()
-  const canvasRef = useRef(null)
   const playCheck = useMemo(() => validateCourse(course.grid), [course.grid])
-
-  useEffect(() => {
-    drawCourseThumbnail(canvasRef.current, course)
-  }, [course])
 
   return (
     <Card className="h-100">
-      <canvas
-        ref={canvasRef}
+      <CourseThumbnail
+        course={course}
         width={THUMBNAIL_WIDTH}
         className="card-img-top"
-        role="img"
-        aria-label={`Track layout preview for ${course.name}`}
+        label={`Track layout preview for ${course.name}`}
       />
       <Card.Body className="d-flex flex-column">
         <div className="d-flex align-items-start justify-content-between gap-2">

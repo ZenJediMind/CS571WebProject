@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react'
 import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
 import { Link } from 'react-router-dom'
-import { drawCourseThumbnail } from '../game/render'
+import CourseThumbnail from '../components/CourseThumbnail'
 import { TEMPLATE_COURSES } from '../game/templates'
 import { useDraftCourse } from '../hooks/useDraftCourse'
 
@@ -19,21 +18,11 @@ const SECONDARY_LINKS = [
 
 export default function Home() {
   const startDraftCourse = useDraftCourse()
-  const trackRef = useRef(null)
-
-  useEffect(() => {
-    if (!trackRef.current || !HERO_COURSE) return
-    drawCourseThumbnail(trackRef.current, HERO_COURSE)
-  }, [])
 
   return (
     <section className="wr-home-hero">
       <div className="wr-home-hero-art" aria-hidden="true">
-        <canvas
-          ref={trackRef}
-          width={HERO_CANVAS_WIDTH}
-          role="presentation"
-        />
+        <CourseThumbnail course={HERO_COURSE} width={HERO_CANVAS_WIDTH} />
       </div>
       <div className="wr-home-hero-scrim" aria-hidden="true" />
 

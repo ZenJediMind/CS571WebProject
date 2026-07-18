@@ -1,6 +1,6 @@
 // Pure race simulation. No DOM, no timers — state advances only through
 // stepRace(state, inputs, dtSeconds), so identical inputs replay identically.
-import { CELL_SIZE, PIECES, derivePath, isTrackCell } from './courseModel.js'
+import { CELL_SIZE, PIECES, cellCenter, derivePath, isTrackCell } from './courseModel.js'
 import { getTheme } from './themes.js'
 
 export const TOTAL_LAPS = 3
@@ -29,10 +29,6 @@ const RAMP_MIN_SPEED = MAX_SPEED * 0.4
 const AIRBORNE_BASE_MS = 500
 
 const cellKey = (row, col) => `${row}:${col}`
-const cellCenter = ({ row, col }) => ({
-  x: (col + 0.5) * CELL_SIZE,
-  y: (row + 0.5) * CELL_SIZE,
-})
 
 export function createRaceState(course, { maxSpeedFactor = 1 } = {}) {
   const path = derivePath(course.grid)

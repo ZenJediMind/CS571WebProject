@@ -99,6 +99,16 @@ recovery, storage-failure feedback) and resolved three remaining issues:
 Verification: 43/43 tests, lint clean, build clean (418.10 kB raw JavaScript,
 slightly smaller than before the change).
 
+A same-day DRY pass then removed the remaining duplication: `cellCenter` now
+lives once in `courseModel` (was repeated in the engine and autopilot), the
+course-not-found notice, course thumbnail canvas, and leaderboard table each
+render from one shared component, the Car Designer header reuses `PageHeader`,
+and Browse derives its three storage-failure messages from one template. The
+brush size picker became a slider (2–40 px) with a live size-preview dot, per
+request. Net effect: about 50 fewer lines in the pages, one new feature, and
+the bundle down to 417.22 kB. All refactored screens plus a full race were
+re-verified in-browser.
+
 ## Deliberately not added
 
 - No Redux, TypeScript migration, backend, live multiplayer, service worker,

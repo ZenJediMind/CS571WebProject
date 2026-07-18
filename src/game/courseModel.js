@@ -4,6 +4,12 @@ export const GRID_COLS = 16
 export const GRID_ROWS = 10
 export const CELL_SIZE = 64
 
+/** Pixel center of a grid cell — shared by the engine, autopilot, and tests. */
+export const cellCenter = ({ row, col }) => ({
+  x: (col + 0.5) * CELL_SIZE,
+  y: (row + 0.5) * CELL_SIZE,
+})
+
 export const PIECES = {
   STRAIGHT: 'straight',
   CURVE: 'curve',
