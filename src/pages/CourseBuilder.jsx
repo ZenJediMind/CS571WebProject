@@ -101,7 +101,7 @@ function rotateCell(grid, row, col) {
   return withCell(grid, row, col, { ...cell, rotation: (cell.rotation + 90) % 360 })
 }
 
-/* ---------- editor state: one reducer holds grid + history + dirty ---------- */
+/* ---------- editor state: one reducer holds grid + history ---------- */
 
 function editorReducer(state, action) {
   switch (action.type) {
@@ -112,7 +112,6 @@ function editorReducer(state, action) {
         grid,
         undo: [...state.undo.slice(-(HISTORY_LIMIT - 1)), state.grid],
         redo: [],
-        dirty: true,
       }
     }
     case 'undo': {
@@ -121,7 +120,6 @@ function editorReducer(state, action) {
         grid: state.undo.at(-1),
         undo: state.undo.slice(0, -1),
         redo: [...state.redo, state.grid],
-        dirty: true,
       }
     }
     case 'redo': {
@@ -130,11 +128,8 @@ function editorReducer(state, action) {
         grid: state.redo.at(-1),
         redo: state.redo.slice(0, -1),
         undo: [...state.undo, state.grid],
-        dirty: true,
       }
     }
-    case 'saved':
-      return { ...state, dirty: false }
     default:
       return state
   }
@@ -165,7 +160,6 @@ function CourseBuilderEditor() {
     grid: course?.grid ?? null,
     undo: [],
     redo: [],
-    dirty: false,
   }))
   const [stamp, setStamp] = useState({ piece: PIECES.STRAIGHT, rotation: 0 })
   const [themeId, setThemeId] = useState(course?.theme ?? DEFAULT_THEME_ID)
@@ -173,6 +167,7 @@ function CourseBuilderEditor() {
     name: course?.name ?? '',
     theme: course?.theme ?? DEFAULT_THEME_ID,
   }))
+  const [savedGrid, setSavedGrid] = useState(() => course?.grid ?? null)
   const [showGridLines, setShowGridLines] = useState(true)
   const [hoverCell, setHoverCell] = useState(null)
   const [cursorCell, setCursorCell] = useState(null)
@@ -183,7 +178,11 @@ function CourseBuilderEditor() {
     () => (editor.grid ? validateCourse(editor.grid) : null),
     [editor.grid],
   )
-  const hasUnsavedChanges = editor.dirty
+  const gridChanged = useMemo(
+    () => JSON.stringify(editor.grid) !== JSON.stringify(savedGrid),
+    [editor.grid, savedGrid],
+  )
+  const hasUnsavedChanges = gridChanged
     || name !== savedSnapshot.name
     || themeId !== savedSnapshot.theme
   const allowNextNavigation = useUnsavedChangesGuard(
@@ -349,7 +348,7 @@ function CourseBuilderEditor() {
     }
     setSaveError(false)
     setSavedSnapshot({ name: trimmedName, theme: themeId })
-    dispatch({ type: 'saved' })
+    setSavedGrid(editor.grid)
     return saved
   }
 
@@ -379,6 +378,7 @@ function CourseBuilderEditor() {
   if (course.isTemplate) {
     return (
       <Container className="py-4">
+        <h1 className="h2 mb-3">Course Builder</h1>
         <Alert variant="info" className="d-flex align-items-center gap-3">
           <span>
             <strong>{course.name}</strong> is a built-in template and can't be edited directly.

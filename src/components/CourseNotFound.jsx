@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 export default function CourseNotFound() {
   return (
     <Container className="py-4">
+      <h1 className="h2 mb-3">Course not found</h1>
       <Alert variant="warning">
         Course not found. <Alert.Link as={Link} to="/browse">Back to Browse</Alert.Link>
       </Alert>

@@ -185,6 +185,7 @@ export default function Race() {
   if (!courseCheck.ok) {
     return (
       <Container className="py-4">
+        <h1 className="h2 mb-3">{course.name}</h1>
         <Alert variant="danger">
           {course.name} is not raceable: {courseCheck.error}{' '}
           <Alert.Link as={Link} to="/browse">Back to Browse</Alert.Link>
@@ -196,6 +197,7 @@ export default function Race() {
   if (isNarrow) {
     return (
       <Container className="py-4">
+        <h1 className="h2 mb-3">{course.name}</h1>
         <Alert variant="warning" className="mb-3">
           Wisconsin Racer needs a keyboard on a wider screen. Racing is disabled on this device size.
         </Alert>
