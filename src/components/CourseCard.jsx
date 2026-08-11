@@ -8,10 +8,10 @@ import CourseThumbnail from './CourseThumbnail'
 const THUMBNAIL_WIDTH = 320
 
 /**
- * One community course: live-drawn thumbnail, votes, Play, and
- * Copy & Edit (templates) or Edit / Delete (your own courses).
+ * One shared course: live-drawn thumbnail, votes, Play, and ownership-aware
+ * edit controls. Supabase RLS remains the final authority for every write.
  */
-export default function CourseCard({ course, onVote, onCopy, onDelete }) {
+export default function CourseCard({ course, onVote, onCopy, onDelete, votePending }) {
   const navigate = useNavigate()
   const playCheck = useMemo(() => validateCourse(course.grid), [course.grid])
 
@@ -35,6 +35,7 @@ export default function CourseCard({ course, onVote, onCopy, onDelete }) {
             variant="outline-secondary"
             size="sm"
             onClick={() => onVote(course.id)}
+            disabled={votePending}
             aria-label={`Vote for ${course.name}, currently ${course.votes} votes`}
           >
             ▲ {course.votes}
@@ -50,11 +51,7 @@ export default function CourseCard({ course, onVote, onCopy, onDelete }) {
           >
             Play
           </Button>
-          {course.isTemplate ? (
-            <Button variant="outline-primary" onClick={() => onCopy(course.id)}>
-              Copy &amp; Edit
-            </Button>
-          ) : (
+          {course.isOwner ? (
             <>
               <Button variant="outline-primary" onClick={() => navigate(`/build/${course.id}`)}>
                 Edit
@@ -67,6 +64,10 @@ export default function CourseCard({ course, onVote, onCopy, onDelete }) {
                 Delete
               </Button>
             </>
+          ) : (
+            <Button variant="outline-primary" onClick={() => onCopy(course.id)}>
+              Copy &amp; Edit
+            </Button>
           )}
         </div>
       </Card.Body>

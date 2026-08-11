@@ -7,9 +7,10 @@ import {
 import {
   createGhostRecorder, createRivalGhosts, ghostPoseAt, stepRivalGhosts,
 } from '../game/ghosts'
-import { loadGhost, saveGhostIfBest } from '../services/ghostService'
-import { getRivalTimes, recordTimeOnce } from '../services/scoreService'
+import { loadGhost, saveGhostIfFaster } from '../services/ghostService'
+import { getRivalTimes } from '../services/scoreService'
 import { GHOST_MODES } from '../services/settingsService'
+import { recordPerformance } from '../services/performanceService'
 
 const KEY_BINDINGS = {
   ArrowUp: 'up', KeyW: 'up',
@@ -163,6 +164,7 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
         lastTimestamp = timestamp
 
         if (dt > 0) {
+          const simulationStartedAt = performance.now()
           // Same stall clamp as stepRace so tab-switch gaps don't desync rivals.
           const simDt = Math.min(dt, MAX_FRAME_SECONDS)
           stepRace(state, inputsRef.current, simDt)
@@ -191,9 +193,13 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
               splitRef.current = { deltaMs: state.splits[index] - bestSplit, id: state.splits.length }
             }
           }
+          recordPerformance('race.simulation', performance.now() - simulationStartedAt)
         }
 
+        const renderStartedAt = performance.now()
         drawScene(dt * 1000)
+        recordPerformance('race.render', performance.now() - renderStartedAt)
+        if (dt > 0) recordPerformance('race.frame_interval', dt * 1000)
 
         if (timestamp >= hudDueAt) {
           hudDueAt = timestamp + HUD_INTERVAL_MS
@@ -205,11 +211,8 @@ export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, set
           const recording = recorderRef.current.finish(state)
           const ms = recording.ms
           const resultId = crypto.randomUUID()
-          // Record the PB first so ghost persistence can gate on bestTimes.
-          const award = recordTimeOnce(resultId, course.id, ms)
-          const ghostOk = award.newBest ? saveGhostIfBest(course.id, recording) : true
-          const ghostSaved = !award.newBest || ghostOk
-          onFinishRef.current?.({ ms, resultId, award, ghostSaved })
+          const ghostSaved = saveGhostIfFaster(course.id, recording)
+          onFinishRef.current?.({ ms, resultId, ghostSaved })
         }
       }
       frameId = requestAnimationFrame(frame)

@@ -1,6 +1,6 @@
-// Best-run ghost recordings, one per course.
+// Fastest device-local ghost recordings, one per course. Race scores are
+// shared through Supabase; replay samples stay local because they are large.
 import { readObject, writeKey } from './storage.js'
-import { getBestTime } from './scoreService.js'
 
 const GHOSTS_KEY = 'ghostLaps'
 
@@ -36,15 +36,12 @@ export function loadGhost(courseId) {
 }
 
 /**
- * Persist only when this run is a personal best (or ties it) and beats any
- * stored ghost. Returns true when the ghost is stored or already as good;
- * false only for invalid input or a failed write.
+ * Persist only when this run beats the local replay. The shared backend owns
+ * the official leaderboard, while this small cache keeps replay rendering
+ * instant and avoids uploading large frame-by-frame recordings.
  */
-export function saveGhostIfBest(courseId, recording) {
+export function saveGhostIfFaster(courseId, recording) {
   if (!isValidGhost(recording)) return false
-  const bestTime = getBestTime(courseId)
-  // Never install a ghost slower than the stored personal best.
-  if (bestTime != null && recording.ms > bestTime) return true
   const all = readGhosts()
   const existing = all[courseId]
   if (existing && existing.ms <= recording.ms) return true

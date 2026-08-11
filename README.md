@@ -1,9 +1,9 @@
 # Wisconsin Racer
 
-Wisconsin Racer is a client-only React racing game for CS571. Build a track,
-paint a car, race three laps, and compare results with deterministic simulated
-rivals. Courses, cars, settings, votes, ghosts, and scores persist in browser
-storage; no credentials or backend are used.
+Wisconsin Racer is a React racing game for CS571. Build a track, paint a car,
+race three laps, and compare results with deterministic simulated rivals.
+Supabase provides guest-authenticated shared courses, votes, race scores, and
+leaderboards. Car drawings, settings, and ghost replays remain device-local.
 
 ## Run locally
 
@@ -14,8 +14,10 @@ npm ci
 npm run dev
 ```
 
-Vite prints the local URL. Clearing site data resets local courses, cars,
-settings, ghosts, scores, and votes; built-in templates remain available.
+Copy `.env.example` to `.env.local` and add the Supabase Project URL and
+publishable key before starting Vite. Vite prints the local URL. Clearing site
+data resets the guest session, car, settings, and ghosts; shared courses,
+votes, and scores remain in Supabase.
 
 ## Controls
 
@@ -40,6 +42,8 @@ npm run build
 
 ## Scope
 
-Rivals, leaderboards, votes, invite codes, and the lobby are deterministic
-single-browser simulations. They do not connect players or share data between
-devices. See `AI.txt` for the course-required AI usage disclosure.
+Rivals and the invite/lobby screen remain deterministic simulations. Shared
+courses, votes, and leaderboard scores are stored in Supabase under Row Level
+Security policies. The `/performance` page reports bounded local measurements
+for backend requests and race-loop work. See `AI.txt` for the course-required
+AI usage disclosure.

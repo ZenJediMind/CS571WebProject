@@ -7,10 +7,10 @@ import Col from 'react-bootstrap/Col'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
+import Spinner from 'react-bootstrap/Spinner'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import CourseNotFound from '../components/CourseNotFound'
 import PiecePreview from '../components/PiecePreview'
-import StorageFullAlert from '../components/StorageFullAlert'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { createEmptyGrid, GRID_COLS, GRID_ROWS, PIECES, validateCourse } from '../game/courseModel'
 import { drawCourseInto, drawTrackPiece } from '../game/render'
@@ -142,19 +142,48 @@ function editorReducer(state, action) {
 export default function CourseBuilder() {
   const { courseId } = useParams()
   const location = useLocation()
-  return <CourseBuilderEditor key={courseId === 'new' ? location.key : courseId} />
+  const [course, setCourse] = useState(undefined)
+  const [loadError, setLoadError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setCourse(undefined)
+    setLoadError(null)
+    const loadCourse = async () => {
+      try {
+        const loaded = courseId === 'new' ? createDraftCourse() : await getCourse(courseId)
+        if (!cancelled) setCourse(loaded)
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Could not load this course.')
+      }
+    }
+    void loadCourse()
+    return () => { cancelled = true }
+  }, [courseId, location.key])
+
+  if (course === undefined && !loadError) {
+    return (
+      <Container className="py-5 text-center" role="status" aria-live="polite">
+        <Spinner animation="border" className="me-2" /> Loading course editor…
+      </Container>
+    )
+  }
+  if (loadError) {
+    return (
+      <Container className="py-4">
+        <Alert variant="danger">{loadError}</Alert>
+      </Container>
+    )
+  }
+  if (!course) return <CourseNotFound />
+
+  return <CourseBuilderEditor key={courseId === 'new' ? location.key : courseId} course={course} />
 }
 
-function CourseBuilderEditor() {
+function CourseBuilderEditor({ course }) {
   const { courseId } = useParams()
   const navigate = useNavigate()
   const canvasRef = useRef(null)
-
-  // '/build/new' edits a fresh in-memory draft; it only persists on Save/Test
-  const course = useMemo(
-    () => (courseId === 'new' ? createDraftCourse() : getCourse(courseId)),
-    [courseId],
-  )
   const [name, setName] = useState(course?.name ?? '')
   const [editor, dispatch] = useReducer(editorReducer, null, () => ({
     grid: course?.grid ?? null,
@@ -171,7 +200,8 @@ function CourseBuilderEditor() {
   const [showGridLines, setShowGridLines] = useState(true)
   const [hoverCell, setHoverCell] = useState(null)
   const [cursorCell, setCursorCell] = useState(null)
-  const [saveError, setSaveError] = useState(false)
+  const [saveError, setSaveError] = useState(null)
+  const [saving, setSaving] = useState(false)
   const paintedCellRef = useRef(null) // last cell touched during a drag
 
   const validation = useMemo(
@@ -333,34 +363,37 @@ function CourseBuilderEditor() {
   }
 
   /* ---------- top actions ---------- */
-  const persistCourse = () => {
+  const persistCourse = async () => {
     const trimmedName = name.trim() || 'Untitled Course'
-    const saved = saveCourse({
-      ...course,
-      name: trimmedName,
-      grid: editor.grid,
-      theme: themeId,
-      draft: !validation?.ok,
-    })
-    if (!saved) {
-      setSaveError(true)
+    setSaving(true)
+    try {
+      const saved = await saveCourse({
+        ...course,
+        name: trimmedName,
+        grid: editor.grid,
+        theme: themeId,
+      })
+      setSaveError(null)
+      setSavedSnapshot({ name: trimmedName, theme: themeId })
+      setSavedGrid(editor.grid)
+      return saved
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not save this course.')
       return null
+    } finally {
+      setSaving(false)
     }
-    setSaveError(false)
-    setSavedSnapshot({ name: trimmedName, theme: themeId })
-    setSavedGrid(editor.grid)
-    return saved
   }
 
-  const handleSave = () => {
-    if (!persistCourse()) return
+  const handleSave = async () => {
+    if (!await persistCourse()) return
     allowNextNavigation()
     navigate('/')
   }
 
-  const handleTestDrive = () => {
+  const handleTestDrive = async () => {
     if (!validation?.ok) return
-    const saved = persistCourse()
+    const saved = await persistCourse()
     if (!saved) return
     allowNextNavigation()
     // Swap the /build/new history entry for the saved id so Back returns here
@@ -386,17 +419,20 @@ function CourseBuilderEditor() {
           <Button
             variant="primary"
             onClick={() => {
-              const copy = copyCourse(course.id)
-              if (copy) navigate(`/build/${copy.id}`)
-              else setSaveError(true)
+              void copyCourse(course.id)
+                .then((copy) => {
+                  if (!copy) throw new Error('That built-in course is unavailable.')
+                  navigate(`/build/${copy.id}`)
+                })
+                .catch((error) => setSaveError(
+                  error instanceof Error ? error.message : 'Could not copy this course.',
+                ))
             }}
           >
             Copy &amp; Edit
           </Button>
         </Alert>
-        {saveError && (
-          <StorageFullAlert itemLabel="track" onClose={() => setSaveError(false)} className="mt-3" />
-        )}
+        {saveError && <Alert variant="danger" className="mt-3">{saveError}</Alert>}
       </Container>
     )
   }
@@ -447,23 +483,21 @@ function CourseBuilderEditor() {
           <Button
             variant="success"
             onClick={handleTestDrive}
-            disabled={!validation?.ok}
+            disabled={!validation?.ok || saving}
             title={validation?.ok ? 'Save and race this course' : (validation?.error ?? 'Track is not race-ready')}
           >
-            Test Drive
+            {saving ? 'Saving…' : 'Test Drive'}
           </Button>
         </Col>
         <Col xs="auto">
-          <Button variant="primary" onClick={handleSave}>
-            Save Course
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Course'}
           </Button>
         </Col>
       </Row>
       <div className="wr-checker mb-3" aria-hidden="true" />
 
-      {saveError && (
-        <StorageFullAlert itemLabel="track" onClose={() => setSaveError(false)} />
-      )}
+      {saveError && <Alert variant="danger" dismissible onClose={() => setSaveError(null)}>{saveError}</Alert>}
 
       <Alert variant="light" className="py-2">
         Pick a piece, then click or drag on the grass to lay track. Click a placed piece

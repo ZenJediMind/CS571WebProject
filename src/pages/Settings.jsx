@@ -3,6 +3,7 @@ import Alert from 'react-bootstrap/Alert'
 import Card from 'react-bootstrap/Card'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
+import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { GHOST_MODES, getSettings, saveSettings } from '../services/settingsService'
 
@@ -57,6 +58,9 @@ export default function Settings() {
           />
         </Card.Body>
       </Card>
+      <p className="mt-4 mb-0">
+        <Link to="/performance">View live performance statistics</Link>
+      </p>
     </Container>
   )
 }

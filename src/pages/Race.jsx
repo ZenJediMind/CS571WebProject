@@ -3,6 +3,7 @@ import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
 import Modal from 'react-bootstrap/Modal'
+import Spinner from 'react-bootstrap/Spinner'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import CourseNotFound from '../components/CourseNotFound'
 import { getCourse } from '../services/courseService'
@@ -44,7 +45,24 @@ export default function Race() {
   const canvasRef = useRef(null)
   const isNarrow = useIsNarrowScreen()
 
-  const course = useMemo(() => getCourse(courseId), [courseId])
+  const [course, setCourse] = useState(undefined)
+  const [courseLoadError, setCourseLoadError] = useState(null)
+  useEffect(() => {
+    let cancelled = false
+    const loadCourse = async () => {
+      try {
+        const loaded = await getCourse(courseId)
+        if (!cancelled) {
+          setCourse(loaded)
+          setCourseLoadError(null)
+        }
+      } catch (error) {
+        if (!cancelled) setCourseLoadError(error instanceof Error ? error.message : 'Could not load this course.')
+      }
+    }
+    void loadCourse()
+    return () => { cancelled = true }
+  }, [courseId])
   const courseCheck = useMemo(
     () => (course ? validateCourse(course.grid) : null),
     [course],
@@ -130,9 +148,9 @@ export default function Race() {
     return () => clearTimeout(timer)
   }, [countdown, canRace])
 
-  const handleFinish = useCallback(({ ms, resultId, award, ghostSaved }) => {
+  const handleFinish = useCallback(({ ms, resultId, ghostSaved }) => {
     navigate(`/results/${courseId}`, {
-      state: { ms, resultId, award, ghostSaved },
+      state: { ms, resultId, ghostSaved },
     })
   }, [navigate, courseId])
 
@@ -178,6 +196,22 @@ export default function Race() {
     // Restarting inside the GO flash window clears the flash timer, so the
     // flag must reset here or the green lamp stays lit through the countdown.
     setShowGo(false)
+  }
+
+  if (course === undefined && !courseLoadError) {
+    return (
+      <Container className="py-5 text-center" role="status" aria-live="polite">
+        <Spinner animation="border" className="me-2" /> Loading race course…
+      </Container>
+    )
+  }
+
+  if (courseLoadError) {
+    return (
+      <Container className="py-4">
+        <Alert variant="danger">{courseLoadError}</Alert>
+      </Container>
+    )
   }
 
   if (!course) return <CourseNotFound />
