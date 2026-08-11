@@ -45,6 +45,13 @@ export default function Results() {
               (browser storage may be full or blocked).
             </Alert>
           )}
+          {award?.bestTimeSaved === false && (
+            <Alert variant="warning" className="py-2">
+              Your race finished, but the time could not be saved
+              (browser storage may be full or blocked). The leaderboard still shows
+              the previous best, if one exists.
+            </Alert>
+          )}
 
           <div className="wr-results-panel">
             <Row className="text-center gy-3">
@@ -75,7 +82,13 @@ export default function Results() {
             <Button as={Link} to={`/race/${courseId}`} variant="primary" className="wr-menu-btn">
               Race Again
             </Button>
-            <Button as={Link} to="/leaderboard" variant="outline-primary" className="wr-menu-btn">
+            <Button
+              as={Link}
+              to="/leaderboard"
+              state={{ courseId }}
+              variant="outline-primary"
+              className="wr-menu-btn"
+            >
               View Leaderboard
             </Button>
             <Button as={Link} to="/" variant="outline-secondary" className="wr-menu-btn">

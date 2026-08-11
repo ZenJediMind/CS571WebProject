@@ -60,14 +60,28 @@ export function getTotalPoints() {
  * personal best (a first time on a course counts as a new best).
  */
 export function recordTime(courseId, ms) {
+  const validCourseId = typeof courseId === 'string' && courseId.trim().length > 0
+  const validTime = typeof ms === 'number' && Number.isFinite(ms) && ms >= 0
+  if (!validCourseId || !validTime) {
+    return {
+      pointsEarned: 0,
+      newBest: false,
+      bestTimeSaved: false,
+      beatenRivals: [],
+      previousBest: null,
+    }
+  }
+
   const beatenRivals = getRivalTimes(courseId).filter((rival) => ms < rival.ms)
   const previousBest = getBestTime(courseId)
   const wouldBeNewBest = previousBest === null || ms < previousBest
 
   // Only claim a new best (and its bonus points) when the best-time write succeeds.
+  let bestTimeSaved = true
   let newBest = false
   if (wouldBeNewBest) {
-    newBest = writeKey(BEST_TIMES_KEY, { ...readBestTimes(), [courseId]: ms })
+    bestTimeSaved = writeKey(BEST_TIMES_KEY, { ...readBestTimes(), [courseId]: ms })
+    newBest = bestTimeSaved
   }
 
   let pointsEarned = beatenRivals.length * POINTS_PER_RIVAL_BEATEN
@@ -77,7 +91,7 @@ export function recordTime(courseId, ms) {
     pointsEarned = 0
   }
 
-  return { pointsEarned, newBest, beatenRivals, previousBest }
+  return { pointsEarned, newBest, bestTimeSaved, beatenRivals, previousBest }
 }
 
 /**

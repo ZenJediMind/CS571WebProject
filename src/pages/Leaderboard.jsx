@@ -4,6 +4,7 @@ import Form from 'react-bootstrap/Form'
 import Tab from 'react-bootstrap/Tab'
 import Table from 'react-bootstrap/Table'
 import Tabs from 'react-bootstrap/Tabs'
+import { useLocation } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { listCourses } from '../services/courseService'
 import { formatMs, getCourseLeaderboard, getPointsRanking } from '../services/scoreService'
@@ -35,14 +36,19 @@ function RankingTable({ rows, valueHeader, valueOf }) {
 }
 
 export default function Leaderboard() {
+  const location = useLocation()
+  const requestedCourseId = location.state?.courseId
   const [courses, setCourses] = useState([])
   const [selectedCourseId, setSelectedCourseId] = useState('')
 
   useEffect(() => {
     const loaded = listCourses()
     setCourses(loaded)
-    setSelectedCourseId((current) => current || loaded[0]?.id || '')
-  }, [])
+    setSelectedCourseId((current) => {
+      const requested = loaded.find((course) => course.id === requestedCourseId)?.id
+      return requested || current || loaded[0]?.id || ''
+    })
+  }, [requestedCourseId])
 
   // Leaderboards are derived on render — never mirrored into extra state
   const times = useMemo(
