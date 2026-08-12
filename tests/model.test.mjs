@@ -15,9 +15,25 @@ function rectangleGrid() {
   return grid
 }
 
+function compactLoopGrid() {
+  const grid = createEmptyGrid()
+  const put = (row, col, piece, rotation) => { grid[row][col] = { piece, rotation } }
+  // The Start/Finish is a straight, so this 2×3 perimeter is the smallest
+  // structurally valid loop rather than an arbitrary game-design minimum.
+  put(2, 2, PIECES.CURVE, 90); put(2, 3, PIECES.START, 90); put(2, 4, PIECES.CURVE, 180)
+  put(3, 4, PIECES.CURVE, 270); put(3, 3, PIECES.STRAIGHT, 90); put(3, 2, PIECES.CURVE, 0)
+  return grid
+}
+
 test('closed rectangle derives a full path and validates', () => {
   const grid = rectangleGrid()
   assert.equal(derivePath(grid)?.length, 12)
+  assert.equal(validateCourse(grid).ok, true)
+})
+
+test('a structurally valid compact loop has no arbitrary piece-count requirement', () => {
+  const grid = compactLoopGrid()
+  assert.equal(derivePath(grid)?.length, 6)
   assert.equal(validateCourse(grid).ok, true)
 })
 

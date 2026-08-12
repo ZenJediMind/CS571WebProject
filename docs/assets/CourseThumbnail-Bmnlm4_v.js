@@ -1,0 +1,1 @@
+import{S as e,c as t,w as n}from"./Button-BzaE0f_W.js";import{s as r}from"./render-UddYDIn_.js";var i=n(e(),1),a=t();function o({course:e,width:t,label:n,className:o}){let s=(0,i.useRef)(null);return(0,i.useEffect)(()=>{r(s.current,e)},[e]),(0,a.jsx)(`canvas`,{ref:s,width:t,className:o,role:n?`img`:`presentation`,"aria-label":n||void 0})}export{o as t};
