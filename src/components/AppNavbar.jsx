@@ -25,7 +25,10 @@ export default function AppNavbar() {
   return (
     <Navbar data-bs-theme="dark" expand="lg" className="wr-navbar">
       <Container>
-        <Navbar.Brand as={Link} to="/">🏁 Wisconsin Racer</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/" className="wr-brand">
+          <span className="wr-brand-marker" aria-hidden="true" />
+          <span>Wisconsin Racer</span>
+        </Navbar.Brand>
         <Navbar.Toggle aria-controls="main-nav" />
         <Navbar.Collapse id="main-nav">
           <Nav className="me-auto">

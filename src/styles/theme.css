@@ -93,6 +93,23 @@ h1, h2, h3, .wr-display {
   font-size: 1.1rem;
 }
 
+.wr-brand {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+/* A CSS marker avoids emoji-glyph fallback boxes in display fonts. */
+.wr-brand-marker {
+  background: repeating-conic-gradient(#ffffff 0% 25%, var(--wr-asphalt) 0% 50%);
+  background-size: 6px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
 /* Main Menu */
 .wr-hero-title {
   font-size: clamp(2rem, 7vw, 3.6rem);
