@@ -147,7 +147,7 @@ export default function Results() {
           )}
           {sharedGhostSaved === null && !sharedGhostSaveError && (
             <Alert variant="info" className="py-2" role="status">
-              <Spinner animation="border" size="sm" className="me-2" /> Saving your shared ghost replayâ€¦
+              <Spinner animation="border" size="sm" className="me-2" /> Saving your shared ghost replay...
             </Alert>
           )}
           {sharedGhostSaved && (
@@ -167,7 +167,7 @@ export default function Results() {
           )}
           {lobbyId && !lobbyFinishSaved && !lobbySaveError && (
             <Alert variant="info" className="py-2" role="status">
-              <Spinner animation="border" size="sm" className="me-2" /> Sharing your finish with the race lobbyâ€¦
+              <Spinner animation="border" size="sm" className="me-2" /> Sharing your finish with the race lobby...
             </Alert>
           )}
           {lobbyFinishSaved && (

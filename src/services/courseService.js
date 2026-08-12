@@ -1,5 +1,5 @@
 import {
-  GRID_COLS, GRID_ROWS, PIECES, ROTATIONS, createEmptyGrid,
+  GRID_COLS, GRID_ROWS, PIECES, ROTATIONS, createEmptyGrid, validateCourse,
 } from '../game/courseModel.js'
 import { TEMPLATE_COURSES } from '../game/templates.js'
 import { DEFAULT_THEME_ID, THEMES } from '../game/themes.js'
@@ -165,8 +165,24 @@ export function createDraftCourse() {
     author: 'You',
     isTemplate: false,
     isOwner: true,
-    isPublic: true,
+    // A draft has no raceable layout yet. Keep it private until its creator
+    // deliberately publishes a completed closed loop.
+    isPublic: false,
   }
+}
+
+/**
+ * Returns a portable direct-play link for a published course. The route is
+ * deliberately hash-based so it works unchanged on the GitHub Pages host.
+ */
+export function getCourseShareUrl(courseId) {
+  if (typeof courseId !== 'string' || courseId.trim().length === 0) {
+    throw new Error('No course is available to share.')
+  }
+
+  const route = `#/race/${encodeURIComponent(courseId)}`
+  if (typeof window === 'undefined') return route
+  return `${window.location.href.split('#')[0]}${route}`
 }
 
 export async function saveCourse(course) {
@@ -174,6 +190,9 @@ export async function saveCourse(course) {
     throw new Error('Built-in templates cannot be overwritten. Copy one before editing.')
   }
   if (!isValidCourse(course)) throw new Error('This course contains invalid data and cannot be saved.')
+  if (course.isPublic && !validateCourse(course.grid).ok) {
+    throw new Error('Only a race-ready course can be published. Save this layout as a private draft instead.')
+  }
 
   return profileAsync('backend.courses.save', async () => {
     const [client, racer] = [requireSupabase(), await ensureRacerSession()]

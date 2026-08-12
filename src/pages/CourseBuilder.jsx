@@ -192,9 +192,13 @@ function CourseBuilderEditor({ course }) {
   }))
   const [stamp, setStamp] = useState({ piece: PIECES.STRAIGHT, rotation: 0 })
   const [themeId, setThemeId] = useState(course?.theme ?? DEFAULT_THEME_ID)
+  const [isPublic, setIsPublic] = useState(() => (
+    Boolean(course?.isPublic) && validateCourse(course?.grid ?? createEmptyGrid()).ok
+  ))
   const [savedSnapshot, setSavedSnapshot] = useState(() => ({
     name: course?.name ?? '',
     theme: course?.theme ?? DEFAULT_THEME_ID,
+    isPublic: Boolean(course?.isPublic) && validateCourse(course?.grid ?? createEmptyGrid()).ok,
   }))
   const [savedGrid, setSavedGrid] = useState(() => course?.grid ?? null)
   const [showGridLines, setShowGridLines] = useState(true)
@@ -208,6 +212,11 @@ function CourseBuilderEditor({ course }) {
     () => (editor.grid ? validateCourse(editor.grid) : null),
     [editor.grid],
   )
+  useEffect(() => {
+    // Publishing incomplete geometry creates a catalog entry nobody can play.
+    // Preserve the work, but immediately turn it back into a private draft.
+    if (!validation?.ok && isPublic) setIsPublic(false)
+  }, [isPublic, validation?.ok])
   const gridChanged = useMemo(
     () => JSON.stringify(editor.grid) !== JSON.stringify(savedGrid),
     [editor.grid, savedGrid],
@@ -215,6 +224,7 @@ function CourseBuilderEditor({ course }) {
   const hasUnsavedChanges = gridChanged
     || name !== savedSnapshot.name
     || themeId !== savedSnapshot.theme
+    || isPublic !== savedSnapshot.isPublic
   const allowNextNavigation = useUnsavedChangesGuard(
     hasUnsavedChanges,
     'Leave without saving? Unsaved track changes will be lost.',
@@ -372,9 +382,10 @@ function CourseBuilderEditor({ course }) {
         name: trimmedName,
         grid: editor.grid,
         theme: themeId,
+        isPublic,
       })
       setSaveError(null)
-      setSavedSnapshot({ name: trimmedName, theme: themeId })
+      setSavedSnapshot({ name: trimmedName, theme: themeId, isPublic })
       setSavedGrid(editor.grid)
       return saved
     } catch (error) {
@@ -478,6 +489,17 @@ function CourseBuilderEditor({ course }) {
               </option>
             ))}
           </Form.Select>
+        </Col>
+        <Col xs={12} sm="auto">
+          <Form.Check
+            type="switch"
+            id="course-public"
+            label="Publish to community"
+            checked={isPublic}
+            disabled={!validation?.ok}
+            onChange={(event) => setIsPublic(event.target.checked)}
+            title={validation?.ok ? 'Let other racers browse, play, and share this course.' : 'Finish one closed loop before publishing.'}
+          />
         </Col>
         <Col xs="auto">
           <Button
@@ -620,9 +642,11 @@ function CourseBuilderEditor({ course }) {
             className="py-2 mt-2 mb-0"
             aria-live="polite"
           >
-            {validation?.ok
-              ? 'Track is race-ready! Test Drive it or Save.'
-              : `${validation?.error ?? 'Track is incomplete.'} You can still Save a work-in-progress.`}
+          {validation?.ok
+              ? (isPublic
+                ? 'Track is race-ready and will be published when saved. Share its link from Browse.'
+                : 'Track is race-ready. Publish it to let other racers browse, play, and share it.')
+              : `${validation?.error ?? 'Track is incomplete.'} You can still Save a private work-in-progress.`}
           </Alert>
         </Col>
       </Row>

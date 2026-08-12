@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { TEMPLATE_COURSES } from '../src/game/templates.js'
-import { courseInternals, createDraftCourse } from '../src/services/courseService.js'
+import { courseInternals, createDraftCourse, getCourseShareUrl } from '../src/services/courseService.js'
 
 test('a new course draft has a collision-resistant ID and a valid blank grid', () => {
   const first = createDraftCourse()
@@ -10,6 +10,12 @@ test('a new course draft has a collision-resistant ID and a valid blank grid', (
   assert.notEqual(first.id, second.id)
   assert.match(first.id, /^crs-/)
   assert.equal(courseInternals.isValidGrid(first.grid), true)
+  assert.equal(first.isPublic, false)
+})
+
+test('a course share link opens its playable race route', () => {
+  assert.equal(getCourseShareUrl('crs-race-ready'), '#/race/crs-race-ready')
+  assert.throws(() => getCourseShareUrl(''))
 })
 
 test('catalog mapping preserves valid shared courses and identifies built-ins', () => {

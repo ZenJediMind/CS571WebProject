@@ -180,7 +180,7 @@ export default function Invite() {
   if (initializing) {
     return (
       <Container className="py-5 text-center" role="status" aria-live="polite">
-        <Spinner animation="border" className="me-2" /> Opening race nightâ€¦
+        <Spinner animation="border" className="me-2" /> Opening race night...
       </Container>
     )
   }
@@ -208,7 +208,7 @@ export default function Invite() {
                   disabled={busyAction === 'host'}
                   onClick={() => void runLobbyAction('host', createRaceLobby)}
                 >
-                  {busyAction === 'host' ? 'Creatingâ€¦' : 'Host a Race Night'}
+                  {busyAction === 'host' ? 'Creating...' : 'Host a Race Night'}
                 </Button>
               </div>
 
@@ -228,7 +228,7 @@ export default function Invite() {
                       className="wr-mono text-center"
                     />
                     <Button type="submit" variant="primary" disabled={busyAction === 'join'}>
-                      {busyAction === 'join' ? 'Joiningâ€¦' : 'Join Race'}
+                      {busyAction === 'join' ? 'Joining...' : 'Join Race'}
                     </Button>
                   </InputGroup>
                 </Form>
@@ -284,7 +284,7 @@ export default function Invite() {
                   <h2 className="h5">Choose the shared course</h2>
                   <p className="small text-secondary">The track is snapshotted when selected so every racer receives the same layout.</p>
                   {coursesLoading ? (
-                    <div role="status"><Spinner animation="border" size="sm" className="me-2" /> Loading public coursesâ€¦</div>
+                    <div role="status"><Spinner animation="border" size="sm" className="me-2" /> Loading public courses...</div>
                   ) : (
                     <InputGroup>
                       <Form.Select
@@ -300,7 +300,7 @@ export default function Invite() {
                         disabled={!selectedCourseId || busyAction === 'course' || selectedCourseId === lobby.course?.id}
                         onClick={() => void runLobbyAction('course', () => selectRaceLobbyCourse(lobby.id, selectedCourseId))}
                       >
-                        {busyAction === 'course' ? 'Savingâ€¦' : 'Choose'}
+                        {busyAction === 'course' ? 'Saving...' : 'Choose'}
                       </Button>
                     </InputGroup>
                   )}
@@ -340,7 +340,7 @@ export default function Invite() {
                     disabled={!canStart || busyAction === 'start'}
                     onClick={() => void runLobbyAction('start', () => startRaceLobby(lobby.id))}
                   >
-                    {busyAction === 'start' ? 'Startingâ€¦' : 'Start Race'}
+                    {busyAction === 'start' ? 'Starting...' : 'Start Race'}
                   </Button>
                 )}
                 {lobby.status !== 'ended' && lobby.isHost && (
@@ -349,7 +349,7 @@ export default function Invite() {
                     disabled={busyAction === 'end'}
                     onClick={() => void runLobbyAction('end', () => endRaceLobby(lobby.id))}
                   >
-                    {busyAction === 'end' ? 'Endingâ€¦' : 'End Race Night'}
+                    {busyAction === 'end' ? 'Ending...' : 'End Race Night'}
                   </Button>
                 )}
                 <Button
@@ -362,7 +362,7 @@ export default function Invite() {
                     return null
                   })}
                 >
-                  {busyAction === 'leave' ? 'Leavingâ€¦' : 'Leave Race Night'}
+                  {busyAction === 'leave' ? 'Leaving...' : 'Leave Race Night'}
                 </Button>
                 <Button as={Link} to="/" variant="outline-secondary">Back to Main Menu</Button>
               </div>

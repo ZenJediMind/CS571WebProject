@@ -7,7 +7,9 @@ import Spinner from 'react-bootstrap/Spinner'
 import { useNavigate } from 'react-router-dom'
 import CourseCard from '../components/CourseCard'
 import PageHeader from '../components/PageHeader'
-import { copyCourse, deleteCourse, listCourses, voteForCourse } from '../services/courseService'
+import {
+  copyCourse, deleteCourse, getCourseShareUrl, listCourses, voteForCourse,
+} from '../services/courseService'
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : 'The shared course service is unavailable.'
@@ -18,6 +20,7 @@ export default function CourseBrowser() {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [shareMessage, setShareMessage] = useState(null)
   const [votePendingId, setVotePendingId] = useState(null)
 
   const loadCourses = useCallback(async () => {
@@ -67,12 +70,28 @@ export default function CourseBrowser() {
     }
   }
 
+  const handleShare = async (course) => {
+    const shareUrl = getCourseShareUrl(course.id)
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setShareMessage(`A playable link for "${course.name}" is copied to your clipboard.`)
+    } catch {
+      window.prompt(`Copy this playable link for "${course.name}":`, shareUrl)
+      setShareMessage('Copy the link shown in the dialog to share this course.')
+    }
+  }
+
   return (
     <Container className="py-4">
       <PageHeader title="Courses" />
       <p className="text-secondary">
-        Built-in and community courses are shared through Supabase. Your guest racer owns its own courses.
+        Published community courses are visible and playable by everyone. Your private drafts appear only to you.
       </p>
+      {shareMessage && (
+        <Alert variant="success" dismissible onClose={() => setShareMessage(null)}>
+          {shareMessage}
+        </Alert>
+      )}
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
@@ -91,6 +110,7 @@ export default function CourseBrowser() {
                 onVote={handleVote}
                 onCopy={handleCopy}
                 onDelete={handleDelete}
+                onShare={handleShare}
                 votePending={votePendingId === course.id}
               />
             </Col>
