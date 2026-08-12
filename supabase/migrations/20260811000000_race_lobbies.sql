@@ -214,7 +214,7 @@ begin
 
   insert into public.race_lobby_members (lobby_id, user_id, racer_name)
   values (lobby_id, current_user_id, display_name)
-  on conflict (lobby_id, user_id) do nothing;
+  on conflict on constraint race_lobby_members_pkey do nothing;
 
   return public.race_lobby_snapshot(lobby_id);
 end;

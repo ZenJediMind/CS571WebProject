@@ -71,4 +71,6 @@ test('race-lobby migration leaves SQL conditional forms unqualified', async () =
     'utf8',
   )
   assert.doesNotMatch(migration, /pg_catalog\.(?:coalesce|nullif|greatest|least)\s*\(/i)
+  assert.match(migration, /on conflict on constraint race_lobby_members_pkey do nothing/i)
+  assert.doesNotMatch(migration, /on conflict\s*\(\s*lobby_id\s*,\s*user_id\s*\)\s*do nothing/i)
 })
