@@ -11,6 +11,8 @@ test('shared ghosts stay behind authenticated lobby membership', async () => {
   assert.match(sql, /create or replace function public\.get_race_lobby_ghosts\(p_lobby_id uuid\)/i)
   assert.match(sql, /member\.user_id = current_user_id/i)
   assert.match(sql, /revoke all on table public\.race_ghosts/i)
+  assert.match(sql, /when p_recording is null then false/i)
+  assert.doesNotMatch(sql, /limit 4/i)
   assert.doesNotMatch(sql, /race_ghost_leaderboard/i)
   assert.doesNotMatch(sql, /pg_catalog\.coalesce\s*\(/i)
 })

@@ -9,7 +9,7 @@ import { GHOST_MODES, getSettings, saveSettings } from '../services/settingsServ
 
 const GHOST_OPTIONS = [
   { value: GHOST_MODES.BOTH, label: 'Opponents + my best lap', help: 'Race saved Race Night player ghosts, simulated rivals, and your recording.' },
-  { value: GHOST_MODES.RIVALS, label: 'Opponents only', help: 'Race saved Race Night player ghosts with simulated rivals filling open slots.' },
+  { value: GHOST_MODES.RIVALS, label: 'Opponents only', help: 'Race every saved Race Night player ghost alongside simulated rivals.' },
   { value: GHOST_MODES.BEST, label: 'My best lap only', help: 'Classic time-trial ghost of your own record.' },
   { value: GHOST_MODES.OFF, label: 'No ghosts', help: 'Just you and the clock.' },
 ]

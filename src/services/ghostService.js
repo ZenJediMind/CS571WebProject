@@ -94,10 +94,9 @@ function mapSharedGhost(row, index) {
   }
 }
 
-/** Loads other members' saved ghosts for the selected Race Night course. */
-export async function loadRaceLobbyGhosts(lobbyId, courseId, courseRevision, limit = 2) {
+/** Loads every other member's saved ghost for the selected Race Night course. */
+export async function loadRaceLobbyGhosts(lobbyId, courseId, courseRevision) {
   assertGhostCourse(courseId, courseRevision)
-  const safeLimit = Number.isInteger(limit) ? Math.max(1, Math.min(limit, 4)) : 2
   if (typeof lobbyId !== 'string' || lobbyId.trim().length === 0) {
     throw new Error('A shared ghost needs a valid race lobby ID.')
   }
@@ -117,7 +116,7 @@ export async function loadRaceLobbyGhosts(lobbyId, courseId, courseRevision, lim
     if (data.some((row) => row.course_id !== courseId || row.course_revision !== courseRevision)) {
       throw new Error('The shared ghost service returned a ghost for another course.')
     }
-    return ghosts.slice(0, safeLimit)
+    return ghosts
   })
 }
 

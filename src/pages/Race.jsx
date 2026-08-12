@@ -302,7 +302,7 @@ export default function Race() {
         </div>
         {opponentGhosts.length > 0 && (
           <div className="wr-hud-badge" aria-label={`Racing player ghosts: ${opponentGhosts.map((ghost) => ghost.name).join(', ')}`}>
-            GHOSTS {opponentGhosts.map((ghost) => ghost.name).join(', ')}
+            PLAYER GHOSTS {opponentGhosts.length}
           </div>
         )}
         {visibleSplit && (

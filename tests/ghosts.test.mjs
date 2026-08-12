@@ -87,6 +87,7 @@ test('shared ghost recordings reject malformed replay payloads', () => {
   assert.equal(isValidGhostRecording({
     ...valid, ms: 200, samples: [[0, 0, 0], [500, 0, 0]],
   }), false)
+  assert.equal(isValidGhostRecording(null), false)
   assert.deepEqual(ghostInternals.mapSharedGhost({
     course_id: 'course', course_revision: 1, racer_name: 'Racer', time_ms: 100, recording: valid,
   }, 0), {

@@ -23,7 +23,9 @@ const KEY_BINDINGS = {
 const EMPTY_INPUTS = { up: false, down: false, left: false, right: false, handbrake: false }
 const HUD_INTERVAL_MS = 100 // ~10Hz — HUD re-renders stay off the 60fps hot path
 const OIL_SKID_MIN_SPEED = 120
-const RECORDED_GHOST_COLORS = ['#e83e8c', '#20c997']
+const RECORDED_GHOST_COLORS = [
+  '#e83e8c', '#20c997', '#6f42c1', '#fd7e14', '#0dcaf0', '#dc3545', '#198754', '#ffc107',
+]
 
 const hudSnapshot = (state, split) => ({
   elapsedMs: state.elapsedMs,
@@ -86,17 +88,13 @@ export function useRaceLoop(canvasRef, course, carImage, {
     lastSplitCountRef.current = 0
     bestGhostRef.current = wantBest ? loadGhost(course.id) : null
     recordedOpponentGhostsRef.current = wantRivals
-      ? opponentGhosts.slice(0, RECORDED_GHOST_COLORS.length).map((ghost, index) => ({
+      ? opponentGhosts.map((ghost, index) => ({
         ...ghost,
-        color: RECORDED_GHOST_COLORS[index],
+        color: RECORDED_GHOST_COLORS[index % RECORDED_GHOST_COLORS.length],
       }))
       : []
     rivalGhostsRef.current = wantRivals
-      ? createRivalGhosts(
-        course,
-        getRivalTimes(course.id),
-        Math.max(0, RECORDED_GHOST_COLORS.length - recordedOpponentGhostsRef.current.length),
-      )
+      ? createRivalGhosts(course, getRivalTimes(course.id))
       : []
     setHud(hudSnapshot(raceStateRef.current, null))
     drawSceneRef.current?.(0) // repaint immediately (Restart is reachable from the pause modal)

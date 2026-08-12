@@ -9,6 +9,7 @@ parallel safe
 set search_path = ''
 as $function$
   select case
+    when p_recording is null then false
     when pg_catalog.jsonb_typeof(p_recording) <> 'object' then false
     when pg_catalog.jsonb_typeof(p_recording -> 'ms') <> 'number' then false
     when pg_catalog.jsonb_typeof(p_recording -> 'sampleMs') <> 'number' then false
@@ -207,8 +208,7 @@ begin
   where member.user_id <> current_user_id
     and ghost.course_id = selected_course_id
     and ghost.course_revision = selected_course_revision
-  order by ghost.time_ms asc, ghost.racer_name asc
-  limit 4;
+  order by ghost.time_ms asc, ghost.racer_name asc;
 end;
 $function$;
 
