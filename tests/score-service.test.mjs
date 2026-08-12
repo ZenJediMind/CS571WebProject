@@ -25,4 +25,20 @@ test('invalid backend race input is rejected before a request is made', () => {
   assert.throws(() => scoreInternals.assertRaceInput('result', 'course', 0, 1000))
   assert.throws(() => scoreInternals.assertRaceInput('', 'course', 1, 1000))
   assert.throws(() => scoreInternals.assertRaceInput('result', 'course', 1, Number.NaN))
+  assert.throws(() => scoreInternals.assertRaceInput('result', 'course', 1, 12.5))
+})
+
+test('shared score RPC responses preserve named player ghosts', () => {
+  const award = scoreInternals.parseRaceAward({
+    pointsEarned: 25,
+    newBest: true,
+    bestTimeSaved: true,
+    beatenRivals: [{ id: 'rival', name: 'Rival', ms: 32_000 }],
+    beatenPlayers: [{ name: 'Mina', ms: 31_000 }],
+    previousBest: 33_000,
+    alreadyRecorded: false,
+  })
+
+  assert.deepEqual(award.beatenPlayers, [{ id: 'player ghosts-Mina-31000', name: 'Mina', ms: 31_000 }])
+  assert.throws(() => scoreInternals.parseRaceAward({ ...award, beatenPlayers: [{}] }), /invalid player ghosts/i)
 })

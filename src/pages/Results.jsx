@@ -8,18 +8,23 @@ import Row from 'react-bootstrap/Row'
 import Spinner from 'react-bootstrap/Spinner'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { getCourse } from '../services/courseService'
+import { saveSharedGhostIfFaster } from '../services/ghostService'
 import { getRaceLobby, recordRaceLobbyFinish } from '../services/inviteService'
 import { formatMs, recordTimeOnce } from '../services/scoreService'
 
 export default function Results() {
   const { courseId } = useParams()
   const location = useLocation()
-  const { ms, resultId, ghostSaved } = location.state ?? {}
+  const {
+    ms, resultId, ghostSaved, recording,
+  } = location.state ?? {}
   const lobbyId = typeof location.state?.lobbyId === 'string' ? location.state.lobbyId : null
   const [course, setCourse] = useState(undefined)
   const [courseError, setCourseError] = useState(null)
   const [award, setAward] = useState(null)
   const [saveError, setSaveError] = useState(null)
+  const [sharedGhostSaveError, setSharedGhostSaveError] = useState(null)
+  const [sharedGhostSaved, setSharedGhostSaved] = useState(null)
   const [lobbySaveError, setLobbySaveError] = useState(null)
   const [lobbyFinishSaved, setLobbyFinishSaved] = useState(false)
 
@@ -51,9 +56,14 @@ export default function Results() {
     let cancelled = false
     setAward(null)
     setSaveError(null)
+    setSharedGhostSaveError(null)
+    setSharedGhostSaved(null)
     setLobbySaveError(null)
     setLobbyFinishSaved(false)
-    const writes = [recordTimeOnce(resultId, courseId, course.revision, ms)]
+    const writes = [
+      recordTimeOnce(resultId, courseId, course.revision, ms, recording, lobbyId),
+      saveSharedGhostIfFaster(courseId, course.revision, recording),
+    ]
     if (lobbyId) writes.push(recordRaceLobbyFinish(lobbyId, Math.round(ms)))
     void Promise.allSettled(writes).then((outcomes) => {
       if (cancelled) return
@@ -67,8 +77,18 @@ export default function Results() {
             : 'Could not save your shared race result.',
         )
       }
+      const sharedGhostOutcome = outcomes[1]
+      if (sharedGhostOutcome.status === 'fulfilled') {
+        setSharedGhostSaved(sharedGhostOutcome.value)
+      } else {
+        setSharedGhostSaveError(
+          sharedGhostOutcome.reason instanceof Error
+            ? sharedGhostOutcome.reason.message
+            : 'Could not save your shared ghost replay.',
+        )
+      }
       if (lobbyId) {
-        const lobbyOutcome = outcomes[1]
+        const lobbyOutcome = outcomes[2]
         if (lobbyOutcome.status === 'fulfilled') {
           setLobbyFinishSaved(true)
         } else {
@@ -81,7 +101,7 @@ export default function Results() {
       }
     })
     return () => { cancelled = true }
-  }, [course, courseId, lobbyId, ms, resultId])
+  }, [course, courseId, lobbyId, ms, recording, resultId])
 
   // Deep-linked here without a finished race - nothing to show.
   if (ms == null || !resultId) return <Navigate to="/browse" replace />
@@ -125,6 +145,26 @@ export default function Results() {
               Your race finished, but the shared result was not saved: {saveError}
             </Alert>
           )}
+          {sharedGhostSaved === null && !sharedGhostSaveError && (
+            <Alert variant="info" className="py-2" role="status">
+              <Spinner animation="border" size="sm" className="me-2" /> Saving your shared ghost replayâ€¦
+            </Alert>
+          )}
+          {sharedGhostSaved && (
+            <Alert variant="success" className="py-2">
+              Your fastest shared ghost is ready for future Race Night opponents.
+            </Alert>
+          )}
+          {sharedGhostSaved === false && (
+            <Alert variant="secondary" className="py-2">
+              Your existing shared ghost for this course is already faster.
+            </Alert>
+          )}
+          {sharedGhostSaveError && (
+            <Alert variant="warning" className="py-2">
+              Your score may be saved, but your shared ghost replay was not: {sharedGhostSaveError}
+            </Alert>
+          )}
           {lobbyId && !lobbyFinishSaved && !lobbySaveError && (
             <Alert variant="info" className="py-2" role="status">
               <Spinner animation="border" size="sm" className="me-2" /> Sharing your finish with the race lobbyâ€¦
@@ -166,7 +206,12 @@ export default function Results() {
             </Row>
             {award?.beatenRivals?.length > 0 && (
               <p className="text-center mt-3 mb-0">
-                You beat {award.beatenRivals.map((rival) => rival.name).join(', ')}!
+                You beat simulated rivals: {award.beatenRivals.map((rival) => rival.name).join(', ')}!
+              </p>
+            )}
+            {award?.beatenPlayers?.length > 0 && (
+              <p className="text-center mt-2 mb-0">
+                You beat {award.beatenPlayers.map((player) => `${player.name}'s ghost`).join(', ')}!
               </p>
             )}
           </div>

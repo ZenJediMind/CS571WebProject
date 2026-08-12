@@ -352,20 +352,18 @@ export default function Invite() {
                     {busyAction === 'end' ? 'Endingâ€¦' : 'End Race Night'}
                   </Button>
                 )}
-                {lobby.status === 'open' && !lobby.isHost && (
-                  <Button
-                    variant="outline-danger"
-                    disabled={busyAction === 'leave'}
-                    onClick={() => void runLobbyAction('leave', async () => {
-                      await leaveRaceLobby(lobby.id)
-                      setLobby(null)
-                      setNotice('You left the race lobby.')
-                      return null
-                    })}
-                  >
-                    {busyAction === 'leave' ? 'Leavingâ€¦' : 'Leave Lobby'}
-                  </Button>
-                )}
+                <Button
+                  variant="outline-danger"
+                  disabled={busyAction === 'leave'}
+                  onClick={() => void runLobbyAction('leave', async () => {
+                    await leaveRaceLobby(lobby.id)
+                    setLobby(null)
+                    setNotice('You left the race lobby.')
+                    return null
+                  })}
+                >
+                  {busyAction === 'leave' ? 'Leavingâ€¦' : 'Leave Race Night'}
+                </Button>
                 <Button as={Link} to="/" variant="outline-secondary">Back to Main Menu</Button>
               </div>
               {lobby.status === 'open' && lobby.isHost && lobby.members.length < 2 && (

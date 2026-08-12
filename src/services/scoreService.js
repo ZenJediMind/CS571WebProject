@@ -1,4 +1,5 @@
 import { ensureRacerSession } from './authService.js'
+import { isValidGhostRecording } from './ghostService.js'
 import { profileAsync } from './performanceService.js'
 import { requireSupabase } from './supabaseClient.js'
 
@@ -10,8 +11,6 @@ const RIVALS = [
 ]
 
 export const PLAYER_CAR_NAME = 'My Ride'
-const POINTS_PER_RIVAL_BEATEN = 10
-const POINTS_PER_NEW_BEST = 5
 const pendingAwards = new Map()
 const completedAwards = new Map()
 const MAX_COMPLETED_AWARDS = 250
@@ -44,8 +43,47 @@ function assertRaceInput(resultId, courseId, courseRevision, ms) {
   if (!Number.isInteger(courseRevision) || courseRevision < 1) {
     throw new Error('This race result has an invalid course revision.')
   }
-  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0 || ms > 2_147_483_647) {
+  if (!Number.isInteger(ms) || ms < 0 || ms > 2_147_483_647) {
     throw new Error('This race result has an invalid time.')
+  }
+}
+
+function assertRaceRecording(recording) {
+  if (!isValidGhostRecording(recording) || !Number.isInteger(recording.ms)) {
+    throw new Error('This race result has an invalid replay recording.')
+  }
+}
+
+function parseBeatenRacers(rows, label) {
+  if (!Array.isArray(rows)) throw new Error(`The shared result returned invalid ${label}.`)
+  return rows.map((row) => {
+    if (!row || typeof row.name !== 'string' || !Number.isInteger(row.ms) || row.ms < 0) {
+      throw new Error(`The shared result returned invalid ${label}.`)
+    }
+    return {
+      id: typeof row.id === 'string' ? row.id : `${label}-${row.name}-${row.ms}`,
+      name: row.name,
+      ms: row.ms,
+    }
+  })
+}
+
+function parseRaceAward(value) {
+  if (!value || typeof value !== 'object'
+    || !Number.isInteger(value.pointsEarned) || value.pointsEarned < 0
+    || typeof value.newBest !== 'boolean' || typeof value.bestTimeSaved !== 'boolean'
+    || typeof value.alreadyRecorded !== 'boolean'
+    || (value.previousBest !== null && (!Number.isInteger(value.previousBest) || value.previousBest < 0))) {
+    throw new Error('The shared result service returned an invalid response.')
+  }
+  return {
+    pointsEarned: value.pointsEarned,
+    newBest: value.newBest,
+    bestTimeSaved: value.bestTimeSaved,
+    beatenRivals: parseBeatenRacers(value.beatenRivals, 'simulated rivals'),
+    beatenPlayers: parseBeatenRacers(value.beatenPlayers, 'player ghosts'),
+    previousBest: value.previousBest,
+    alreadyRecorded: value.alreadyRecorded,
   }
 }
 
@@ -74,76 +112,37 @@ function cacheAward(resultId, award) {
   }
 }
 
-async function getPreviousBest(client, racerName, courseId, courseRevision) {
-  const { data, error } = await client
-    .from('race_score_leaderboard')
-    .select('time_ms')
-    .eq('course_id', courseId)
-    .eq('course_revision', courseRevision)
-    .eq('racer_name', racerName)
-    .order('time_ms', { ascending: true })
-    .limit(1)
-  if (error) throw new Error(`Could not read your previous best time: ${error.message}`)
-  return data[0]?.time_ms ?? null
-}
-
 /**
- * Writes one result to Supabase. The table's (user_id, client_result_id)
- * constraint is the final guard against duplicate points when a page remounts.
+ * Writes one authenticated result to Supabase. The database—not the
+ * browser—derives racer identity, checks the course revision, and calculates
+ * simulated-rival points. Its unique (user_id, client_result_id) constraint
+ * remains the final idempotency guard.
  */
-export async function recordTime(resultId, courseId, courseRevision, ms) {
+export async function recordTime(resultId, courseId, courseRevision, ms, recording, lobbyId = null) {
   assertRaceInput(resultId, courseId, courseRevision, ms)
+  assertRaceRecording(recording)
+  if (recording.ms !== ms) throw new Error('This race result time does not match its replay recording.')
+  if (lobbyId !== null && (typeof lobbyId !== 'string' || lobbyId.trim().length === 0)) {
+    throw new Error('This race result has an invalid race lobby ID.')
+  }
 
   return profileAsync('backend.scores.record', async () => {
-    const [client, racer] = [requireSupabase(), await ensureRacerSession()]
-    const previousBest = await getPreviousBest(
-      client,
-      racer.displayName,
-      courseId,
-      courseRevision,
-    )
-    const beatenRivals = getRivalTimes(courseId).filter((rival) => ms < rival.ms)
-    const newBest = previousBest === null || ms < previousBest
-    const pointsEarned = beatenRivals.length * POINTS_PER_RIVAL_BEATEN
-      + (newBest ? POINTS_PER_NEW_BEST : 0)
-
-    const { error } = await client
-      .from('race_scores')
-      .insert({
-        course_id: courseId,
-        course_revision: courseRevision,
-        user_id: racer.id,
-        racer_name: racer.displayName,
-        time_ms: Math.round(ms),
-        points_earned: pointsEarned,
-        client_result_id: resultId,
-      })
-
-    if (error?.code === '23505') {
-      return {
-        pointsEarned: 0,
-        newBest: false,
-        bestTimeSaved: true,
-        beatenRivals: [],
-        previousBest,
-        alreadyRecorded: true,
-      }
-    }
+    await ensureRacerSession()
+    const { data, error } = await requireSupabase().rpc('submit_race_result', {
+      p_client_result_id: resultId,
+      p_course_id: courseId,
+      p_course_revision: courseRevision,
+      p_time_ms: ms,
+      p_recording: recording,
+      p_lobby_id: lobbyId,
+    })
     if (error) throw new Error(`Could not save your race result: ${error.message}`)
-
-    return {
-      pointsEarned,
-      newBest,
-      bestTimeSaved: true,
-      beatenRivals,
-      previousBest,
-      alreadyRecorded: false,
-    }
+    return parseRaceAward(data)
   })
 }
 
 /** Idempotent across React remounts and ordinary result-page refreshes. */
-export async function recordTimeOnce(resultId, courseId, courseRevision, ms) {
+export async function recordTimeOnce(resultId, courseId, courseRevision, ms, recording, lobbyId = null) {
   const completed = completedAwards.get(resultId)
   if (completed) return completed
   const cached = readCachedAward(resultId)
@@ -153,7 +152,7 @@ export async function recordTimeOnce(resultId, courseId, courseRevision, ms) {
   }
   if (pendingAwards.has(resultId)) return pendingAwards.get(resultId)
 
-  const pending = recordTime(resultId, courseId, courseRevision, ms)
+  const pending = recordTime(resultId, courseId, courseRevision, ms, recording, lobbyId)
     .then((award) => {
       cacheAward(resultId, award)
       return award
@@ -233,4 +232,4 @@ export function formatMs(ms) {
   return `${minutes}:${seconds.padStart(4, '0')}`
 }
 
-export const scoreInternals = { assertRaceInput, bestByRacer }
+export const scoreInternals = { assertRaceInput, assertRaceRecording, bestByRacer, parseRaceAward }

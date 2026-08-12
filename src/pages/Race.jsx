@@ -14,6 +14,7 @@ import { RaceAudio } from '../game/audio'
 import { formatMs } from '../services/scoreService'
 import { getSettings, saveSettings } from '../services/settingsService'
 import { getRaceLobby } from '../services/inviteService'
+import { loadRaceLobbyGhosts } from '../services/ghostService'
 import { useRaceLoop } from '../hooks/useRaceLoop'
 
 const COUNTDOWN_START = 3
@@ -51,13 +52,18 @@ export default function Race() {
   const [course, setCourse] = useState(undefined)
   const [courseLoadError, setCourseLoadError] = useState(null)
   const [lobby, setLobby] = useState(null)
+  const [opponentGhosts, setOpponentGhosts] = useState([])
+  const [opponentGhostLoadError, setOpponentGhostLoadError] = useState(null)
   useEffect(() => {
     let cancelled = false
     const loadCourse = async () => {
       try {
         let loaded
+        let loadedLobby = null
+        let loadedOpponentGhosts = []
+        let ghostLoadError = null
         if (lobbyId) {
-          const loadedLobby = await getRaceLobby(lobbyId)
+          loadedLobby = await getRaceLobby(lobbyId)
           if (loadedLobby.status !== 'racing') {
             throw new Error('This race night is not currently running. Return to Race Night for its latest status.')
           }
@@ -65,12 +71,18 @@ export default function Race() {
             throw new Error('This race does not match the lobby\'s selected course.')
           }
           loaded = loadedLobby.course
-          if (!cancelled) setLobby(loadedLobby)
+          try {
+            loadedOpponentGhosts = await loadRaceLobbyGhosts(lobbyId, loaded.id, loaded.revision)
+          } catch (error) {
+            ghostLoadError = error instanceof Error ? error.message : 'Could not load player ghost replays.'
+          }
         } else {
           loaded = await getCourse(courseId)
-          if (!cancelled) setLobby(null)
         }
         if (!cancelled) {
+          setLobby(loadedLobby)
+          setOpponentGhosts(loadedOpponentGhosts)
+          setOpponentGhostLoadError(ghostLoadError)
           setCourse(loaded)
           setCourseLoadError(null)
         }
@@ -166,9 +178,11 @@ export default function Race() {
     return () => clearTimeout(timer)
   }, [countdown, canRace])
 
-  const handleFinish = useCallback(({ ms, resultId, ghostSaved }) => {
+  const handleFinish = useCallback(({ ms, resultId, ghostSaved, recording }) => {
     navigate(`/results/${courseId}`, {
-      state: { ms, resultId, ghostSaved, lobbyId },
+      state: {
+        ms, resultId, ghostSaved, lobbyId, recording,
+      },
     })
   }, [navigate, courseId, lobbyId])
 
@@ -178,6 +192,7 @@ export default function Race() {
     onFinish: handleFinish,
     settings,
     audioRef,
+    opponentGhosts,
   })
 
   // Asphalt page chrome only while an actual race session is on screen
@@ -285,6 +300,11 @@ export default function Race() {
         <div className="wr-hud-badge">
           CHECK {hud.nextCheckpoint}/{hud.checkpointTotal}
         </div>
+        {opponentGhosts.length > 0 && (
+          <div className="wr-hud-badge" aria-label={`Racing player ghosts: ${opponentGhosts.map((ghost) => ghost.name).join(', ')}`}>
+            GHOSTS {opponentGhosts.map((ghost) => ghost.name).join(', ')}
+          </div>
+        )}
         {visibleSplit && (
           <span
             className={`wr-split-chip ${visibleSplit.deltaMs <= 0 ? 'wr-split-ahead' : 'wr-split-behind'}`}
@@ -316,6 +336,12 @@ export default function Race() {
       {settingsSaveError && (
         <Alert variant="warning" className="py-2" dismissible onClose={() => setSettingsSaveError(false)}>
           Sound changed for this race, but browser storage could not save the setting.
+        </Alert>
+      )}
+
+      {opponentGhostLoadError && (
+        <Alert variant="warning" className="py-2">
+          This race night started without player ghost replays: {opponentGhostLoadError}
         </Alert>
       )}
 
