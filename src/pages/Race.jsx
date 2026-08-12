@@ -4,7 +4,7 @@ import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
 import Modal from 'react-bootstrap/Modal'
 import Spinner from 'react-bootstrap/Spinner'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import CourseNotFound from '../components/CourseNotFound'
 import { getCourse } from '../services/courseService'
 import { defaultCarDataUrl, loadPlayerCar } from '../services/carService'
@@ -13,6 +13,7 @@ import { COURSE_WIDTH, COURSE_HEIGHT } from '../game/render'
 import { RaceAudio } from '../game/audio'
 import { formatMs } from '../services/scoreService'
 import { getSettings, saveSettings } from '../services/settingsService'
+import { getRaceLobby } from '../services/inviteService'
 import { useRaceLoop } from '../hooks/useRaceLoop'
 
 const COUNTDOWN_START = 3
@@ -42,16 +43,33 @@ function useIsNarrowScreen() {
 export default function Race() {
   const { courseId } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const lobbyId = searchParams.get('lobby')
   const canvasRef = useRef(null)
   const isNarrow = useIsNarrowScreen()
 
   const [course, setCourse] = useState(undefined)
   const [courseLoadError, setCourseLoadError] = useState(null)
+  const [lobby, setLobby] = useState(null)
   useEffect(() => {
     let cancelled = false
     const loadCourse = async () => {
       try {
-        const loaded = await getCourse(courseId)
+        let loaded
+        if (lobbyId) {
+          const loadedLobby = await getRaceLobby(lobbyId)
+          if (loadedLobby.status !== 'racing') {
+            throw new Error('This race night is not currently running. Return to Race Night for its latest status.')
+          }
+          if (!loadedLobby.course || loadedLobby.course.id !== courseId) {
+            throw new Error('This race does not match the lobby\'s selected course.')
+          }
+          loaded = loadedLobby.course
+          if (!cancelled) setLobby(loadedLobby)
+        } else {
+          loaded = await getCourse(courseId)
+          if (!cancelled) setLobby(null)
+        }
         if (!cancelled) {
           setCourse(loaded)
           setCourseLoadError(null)
@@ -62,7 +80,7 @@ export default function Race() {
     }
     void loadCourse()
     return () => { cancelled = true }
-  }, [courseId])
+  }, [courseId, lobbyId])
   const courseCheck = useMemo(
     () => (course ? validateCourse(course.grid) : null),
     [course],
@@ -150,9 +168,9 @@ export default function Race() {
 
   const handleFinish = useCallback(({ ms, resultId, ghostSaved }) => {
     navigate(`/results/${courseId}`, {
-      state: { ms, resultId, ghostSaved },
+      state: { ms, resultId, ghostSaved, lobbyId },
     })
-  }, [navigate, courseId])
+  }, [navigate, courseId, lobbyId])
 
   const racing = canRace && countdown === 0 && !paused
   const { hud, restart } = useRaceLoop(canvasRef, canRace ? course : null, carImage, {
@@ -215,6 +233,18 @@ export default function Race() {
   }
 
   if (!course) return <CourseNotFound />
+
+  if (lobby?.members.some((member) => member.isYou && member.status === 'finished')) {
+    return (
+      <Container className="py-4">
+        <h1 className="h2 mb-3">Race already finished</h1>
+        <Alert variant="success">
+          Your time for this race night is already locked in.{' '}
+          <Alert.Link as={Link} to="/invite">Return to Race Night</Alert.Link>
+        </Alert>
+      </Container>
+    )
+  }
 
   if (!courseCheck.ok) {
     return (

@@ -16,9 +16,12 @@ settings, and ghost replays remain local to the browser.
 4. In the repository root, copy `.env.example` to `.env.local` and replace
    the two placeholder values. Never put a `service_role`, secret, or database
    password in this file or in frontend source code.
-5. Open **SQL Editor**, create a new query, paste the contents of
-   `supabase/migrations/20260810000000_initial_schema.sql`, review it, and run
-   it once.
+5. Open **SQL Editor** and run the migrations in filename order, reviewing
+   each before it runs:
+   - `supabase/migrations/20260810000000_initial_schema.sql`
+   - `supabase/migrations/20260811000000_race_lobbies.sql`
+   The second migration adds the shared Race Night tables and the
+   membership-checked RPCs used to create, join, start, and finish a lobby.
 6. Open **Authentication -> Providers** and enable **Anonymous Sign-Ins**.
    Email can remain enabled for a future account-upgrade flow. Configure URL
    redirects for localhost and GitHub Pages if Email confirmations are used.
@@ -37,3 +40,8 @@ The current score model still receives a race time from the browser. Supabase
 can restrict who submits a score, but it cannot prove that a client-submitted
 time was honestly produced. A future authoritative leaderboard would need a
 server-side validation design.
+
+Race Night is an asynchronous shared time-trial, not a real-time synchronized
+vehicle simulation. The host selects a public course and the database stores a
+snapshot of that layout before the race begins, so every participant races the
+same track even if its source course later changes or is deleted.

@@ -1,1 +1,0 @@
-import{C as e,c as t,l as n,o as r,x as i}from"./Button-Diqtucpz.js";var a=e(n()),o=e(i()),s=t(),c=o.forwardRef(({bsPrefix:e,bg:t=`primary`,pill:n=!1,text:i,className:o,as:c=`span`,...l},u)=>{let d=r(e,`badge`);return(0,s.jsx)(c,{ref:u,...l,className:(0,a.default)(o,d,n&&`rounded-pill`,i&&`text-${i}`,t&&`bg-${t}`)})});c.displayName=`Badge`;export{c as t};

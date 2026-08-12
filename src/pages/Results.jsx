@@ -8,22 +8,35 @@ import Row from 'react-bootstrap/Row'
 import Spinner from 'react-bootstrap/Spinner'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { getCourse } from '../services/courseService'
+import { getRaceLobby, recordRaceLobbyFinish } from '../services/inviteService'
 import { formatMs, recordTimeOnce } from '../services/scoreService'
 
 export default function Results() {
   const { courseId } = useParams()
   const location = useLocation()
   const { ms, resultId, ghostSaved } = location.state ?? {}
+  const lobbyId = typeof location.state?.lobbyId === 'string' ? location.state.lobbyId : null
   const [course, setCourse] = useState(undefined)
   const [courseError, setCourseError] = useState(null)
   const [award, setAward] = useState(null)
   const [saveError, setSaveError] = useState(null)
+  const [lobbySaveError, setLobbySaveError] = useState(null)
+  const [lobbyFinishSaved, setLobbyFinishSaved] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     const loadCourse = async () => {
       try {
-        const loaded = await getCourse(courseId)
+        let loaded
+        if (lobbyId) {
+          const lobby = await getRaceLobby(lobbyId)
+          if (!lobby.course || lobby.course.id !== courseId) {
+            throw new Error('This result does not match the race lobby\'s selected course.')
+          }
+          loaded = lobby.course
+        } else {
+          loaded = await getCourse(courseId)
+        }
         if (!cancelled) setCourse(loaded)
       } catch (error) {
         if (!cancelled) setCourseError(error instanceof Error ? error.message : 'Could not load this course.')
@@ -31,24 +44,44 @@ export default function Results() {
     }
     void loadCourse()
     return () => { cancelled = true }
-  }, [courseId])
+  }, [courseId, lobbyId])
 
   useEffect(() => {
     if (!course || ms == null || !resultId) return undefined
     let cancelled = false
     setAward(null)
     setSaveError(null)
-    void recordTimeOnce(resultId, courseId, course.revision, ms)
-      .then((savedAward) => {
-        if (!cancelled) setAward(savedAward)
-      })
-      .catch((error) => {
-        if (!cancelled) setSaveError(
-          error instanceof Error ? error.message : 'Could not save your shared race result.',
+    setLobbySaveError(null)
+    setLobbyFinishSaved(false)
+    const writes = [recordTimeOnce(resultId, courseId, course.revision, ms)]
+    if (lobbyId) writes.push(recordRaceLobbyFinish(lobbyId, Math.round(ms)))
+    void Promise.allSettled(writes).then((outcomes) => {
+      if (cancelled) return
+      const scoreOutcome = outcomes[0]
+      if (scoreOutcome.status === 'fulfilled') {
+        setAward(scoreOutcome.value)
+      } else {
+        setSaveError(
+          scoreOutcome.reason instanceof Error
+            ? scoreOutcome.reason.message
+            : 'Could not save your shared race result.',
         )
-      })
+      }
+      if (lobbyId) {
+        const lobbyOutcome = outcomes[1]
+        if (lobbyOutcome.status === 'fulfilled') {
+          setLobbyFinishSaved(true)
+        } else {
+          setLobbySaveError(
+            lobbyOutcome.reason instanceof Error
+              ? lobbyOutcome.reason.message
+              : 'Could not share your finish time with the race lobby.',
+          )
+        }
+      }
+    })
     return () => { cancelled = true }
-  }, [course, courseId, ms, resultId])
+  }, [course, courseId, lobbyId, ms, resultId])
 
   // Deep-linked here without a finished race - nothing to show.
   if (ms == null || !resultId) return <Navigate to="/browse" replace />
@@ -92,6 +125,21 @@ export default function Results() {
               Your race finished, but the shared result was not saved: {saveError}
             </Alert>
           )}
+          {lobbyId && !lobbyFinishSaved && !lobbySaveError && (
+            <Alert variant="info" className="py-2" role="status">
+              <Spinner animation="border" size="sm" className="me-2" /> Sharing your finish with the race lobbyâ€¦
+            </Alert>
+          )}
+          {lobbyFinishSaved && (
+            <Alert variant="success" className="py-2">
+              Your finish time is now visible to everyone in this race night.
+            </Alert>
+          )}
+          {lobbySaveError && (
+            <Alert variant="warning" className="py-2">
+              Your shared score may be saved, but the race lobby could not receive this finish: {lobbySaveError}
+            </Alert>
+          )}
           {award?.alreadyRecorded && (
             <Alert variant="secondary" className="py-2">
               This result was already saved, so it was not counted twice.
@@ -124,9 +172,15 @@ export default function Results() {
           </div>
 
           <div className="d-grid gap-2">
-            <Button as={Link} to={`/race/${courseId}`} variant="primary" className="wr-menu-btn">
-              Race Again
-            </Button>
+            {lobbyId ? (
+              <Button as={Link} to="/invite" variant="primary" className="wr-menu-btn">
+                Return to Race Night
+              </Button>
+            ) : (
+              <Button as={Link} to={`/race/${courseId}`} variant="primary" className="wr-menu-btn">
+                Race Again
+              </Button>
+            )}
             <Button
               as={Link}
               to="/leaderboard"

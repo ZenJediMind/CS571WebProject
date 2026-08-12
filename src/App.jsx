@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react'
-import { createHashRouter, Navigate, Outlet, RouterProvider, useParams } from 'react-router-dom'
+import {
+  createHashRouter, Navigate, Outlet, RouterProvider, useLocation, useParams,
+} from 'react-router-dom'
 import AppNavbar from './components/AppNavbar'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -32,7 +34,8 @@ function Page({ Component }) {
 
 function RaceRoute() {
   const { courseId } = useParams()
-  return <Page Component={() => <Race key={courseId} />} />
+  const location = useLocation()
+  return <Page Component={() => <Race key={`${courseId}:${location.search}`} />} />
 }
 
 const router = createHashRouter([

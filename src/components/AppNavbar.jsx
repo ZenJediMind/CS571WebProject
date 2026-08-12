@@ -33,6 +33,7 @@ export default function AppNavbar() {
             <Nav.Link as="button" type="button" onClick={startDraftCourse}>Build</Nav.Link>
             <Nav.Link as={Link} to="/car">Car</Nav.Link>
             <Nav.Link as={Link} to="/leaderboard">Leaderboard</Nav.Link>
+            <Nav.Link as={Link} to="/invite">Race Night</Nav.Link>
           </Nav>
           {racerName && <Navbar.Text className="small">Guest: {racerName}</Navbar.Text>}
         </Navbar.Collapse>
