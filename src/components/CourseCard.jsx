@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import Button from 'react-bootstrap/Button'
-import Badge from 'react-bootstrap/Badge'
 import Card from 'react-bootstrap/Card'
 import { useNavigate } from 'react-router-dom'
 import { validateCourse } from '../game/courseModel'
@@ -9,10 +8,10 @@ import CourseThumbnail from './CourseThumbnail'
 const THUMBNAIL_WIDTH = 320
 
 /**
- * One shared course: live-drawn thumbnail, votes, Play, and ownership-aware
- * edit controls. Supabase RLS remains the final authority for every write.
+ * One community course: live-drawn thumbnail, votes, Play, and
+ * Copy & Edit (templates) or Edit / Delete (your own courses).
  */
-export default function CourseCard({ course, onVote, onCopy, onDelete, onShare, votePending }) {
+export default function CourseCard({ course, onVote, onCopy, onDelete }) {
   const navigate = useNavigate()
   const playCheck = useMemo(() => validateCourse(course.grid), [course.grid])
 
@@ -36,22 +35,11 @@ export default function CourseCard({ course, onVote, onCopy, onDelete, onShare, 
             variant="outline-secondary"
             size="sm"
             onClick={() => onVote(course.id)}
-            disabled={votePending}
             aria-label={`Vote for ${course.name}, currently ${course.votes} votes`}
           >
             ▲ {course.votes}
           </Button>
         </div>
-        {!course.isPublic && course.isOwner && (
-          <div className="mt-2">
-            <Badge bg="secondary">Private draft</Badge>
-          </div>
-        )}
-        {!playCheck.ok && (
-          <Card.Text className="small text-warning-emphasis mt-2 mb-0">
-            Needs editing before it can be played or shared: {playCheck.error}
-          </Card.Text>
-        )}
         <div className="d-flex gap-2 mt-3">
           <Button
             variant="primary"
@@ -62,16 +50,11 @@ export default function CourseCard({ course, onVote, onCopy, onDelete, onShare, 
           >
             Play
           </Button>
-          {course.isPublic && playCheck.ok && (
-            <Button
-              variant="outline-secondary"
-              onClick={() => onShare(course)}
-              aria-label={`Copy a playable link for ${course.name}`}
-            >
-              Share
+          {course.isTemplate ? (
+            <Button variant="outline-primary" onClick={() => onCopy(course.id)}>
+              Copy &amp; Edit
             </Button>
-          )}
-          {course.isOwner ? (
+          ) : (
             <>
               <Button variant="outline-primary" onClick={() => navigate(`/build/${course.id}`)}>
                 Edit
@@ -84,10 +67,6 @@ export default function CourseCard({ course, onVote, onCopy, onDelete, onShare, 
                 Delete
               </Button>
             </>
-          ) : (
-            <Button variant="outline-primary" onClick={() => onCopy(course.id)}>
-              Copy &amp; Edit
-            </Button>
           )}
         </div>
       </Card.Body>

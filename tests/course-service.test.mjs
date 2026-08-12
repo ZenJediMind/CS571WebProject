@@ -1,55 +1,48 @@
-import test from 'node:test'
+import test, { beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { TEMPLATE_COURSES } from '../src/game/templates.js'
-import { courseInternals, createDraftCourse, getCourseShareUrl } from '../src/services/courseService.js'
+import { listCourses, voteForCourse } from '../src/services/courseService.js'
+import { writeKey } from '../src/services/storage.js'
 
-test('a new course draft has a collision-resistant ID and a valid blank grid', () => {
-  const first = createDraftCourse()
-  const second = createDraftCourse()
+const values = new Map()
+let blockWrites = false
+globalThis.localStorage = {
+  getItem: (key) => values.get(key) ?? null,
+  setItem: (key, value) => {
+    if (blockWrites) throw new Error('storage blocked')
+    values.set(key, String(value))
+  },
+}
 
-  assert.notEqual(first.id, second.id)
-  assert.match(first.id, /^crs-/)
-  assert.equal(courseInternals.isValidGrid(first.grid), true)
-  assert.equal(first.isPublic, false)
+beforeEach(() => {
+  values.clear()
+  blockWrites = false
 })
 
-test('a course share link opens its playable race route', () => {
-  assert.equal(getCourseShareUrl('crs-race-ready'), '#/race/crs-race-ready')
-  assert.throws(() => getCourseShareUrl(''))
+test('course listing ignores malformed and duplicate stored courses', () => {
+  const base = {
+    ...TEMPLATE_COURSES[0],
+    id: 'crs-valid',
+    name: 'Valid Course',
+    author: 'You',
+    isTemplate: false,
+  }
+  writeKey('courses', [
+    base,
+    { ...base, id: 'crs-corrupt', author: { not: 'renderable' } },
+    { ...base, id: TEMPLATE_COURSES[0].id },
+    { ...base, name: 'Duplicate Course' },
+  ])
+
+  const userCourses = listCourses().filter((course) => !course.isTemplate)
+  assert.deepEqual(userCourses.map((course) => course.id), ['crs-valid'])
 })
 
-test('catalog mapping preserves valid shared courses and identifies built-ins', () => {
-  const template = TEMPLATE_COURSES[0]
-  const mapped = courseInternals.mapCatalogCourse({
-    id: template.id,
-    name: template.name,
-    author: 'A seeded guest',
-    grid: template.grid,
-    theme: template.theme,
-    is_public: true,
-    revision: 1,
-    created_at: '2026-08-11T00:00:00.000Z',
-    updated_at: '2026-08-11T00:00:00.000Z',
-    votes: '3',
-  }, { displayName: 'Racer-ABC123' })
+test('voting reports whether browser storage accepted the write', () => {
+  const courseId = TEMPLATE_COURSES[0].id
+  assert.equal(voteForCourse(courseId), true)
+  assert.equal(listCourses().find((course) => course.id === courseId).votes, 1)
 
-  assert.equal(mapped.isTemplate, true)
-  assert.equal(mapped.author, 'Wisconsin Racer')
-  assert.equal(mapped.votes, 3)
-  assert.equal(mapped.isOwner, false)
-})
-
-test('catalog mapping rejects malformed database grids before rendering them', () => {
-  assert.throws(() => courseInternals.mapCatalogCourse({
-    id: 'crs-invalid',
-    name: 'Broken',
-    author: 'Racer-ABC123',
-    grid: [],
-    theme: 'circuit',
-    is_public: true,
-    revision: 1,
-    created_at: '2026-08-11T00:00:00.000Z',
-    updated_at: '2026-08-11T00:00:00.000Z',
-    votes: 0,
-  }, { displayName: 'Racer-ABC123' }))
+  blockWrites = true
+  assert.equal(voteForCourse(courseId), false)
 })

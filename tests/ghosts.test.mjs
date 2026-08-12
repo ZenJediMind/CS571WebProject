@@ -7,7 +7,6 @@ import { PIECES } from '../src/game/courseModel.js'
 import {
   simulateRunMs, createRivalGhosts, stepRivalGhosts, createGhostRecorder, ghostPoseAt,
 } from '../src/game/ghosts.js'
-import { ghostInternals, isValidGhostRecording } from '../src/services/ghostService.js'
 
 const ring = TEMPLATE_COURSES[0]
 
@@ -64,37 +63,10 @@ test('recorder + interpolation round-trip', () => {
   const recording = recorder.finish(state)
   assert.ok(recording.samples.length > 50)
   assert.equal(recording.splits.length, (state.checkpoints.length + 1) * state.totalLaps)
-  assert.ok(
-    recording.samples.every(([, , headingMilliRadians]) => Math.abs(headingMilliRadians) <= 3142),
-    'wrapped replay headings remain within one turn',
-  )
 
   const sampleIndex = 40
   const pose = ghostPoseAt(recording, sampleIndex * 100)
   assert.equal(Math.round(pose.x), recording.samples[sampleIndex][0])
   assert.equal(Math.round(pose.y), recording.samples[sampleIndex][1])
   assert.equal(ghostPoseAt(recording, recording.ms + 1), null, 'ghost disappears after its run')
-})
-
-test('shared ghost recordings reject malformed replay payloads', () => {
-  const valid = {
-    ms: 100,
-    sampleMs: 100,
-    samples: [[10, 20, 0]],
-    splits: [100],
-  }
-  assert.equal(isValidGhostRecording(valid), true)
-  assert.equal(isValidGhostRecording({ ...valid, sampleMs: 10 }), false)
-  assert.equal(isValidGhostRecording({ ...valid, samples: [[10, 'bad', 0]] }), false)
-  assert.equal(isValidGhostRecording({ ...valid, splits: [-1] }), false)
-  assert.equal(isValidGhostRecording({ ...valid, ms: 10_000 }), false)
-  assert.equal(isValidGhostRecording({
-    ...valid, ms: 200, samples: [[0, 0, 0], [500, 0, 0]],
-  }), false)
-  assert.equal(isValidGhostRecording(null), false)
-  assert.deepEqual(ghostInternals.mapSharedGhost({
-    course_id: 'course', course_revision: 1, racer_name: 'Racer', time_ms: 100, recording: valid,
-  }, 0), {
-    id: 'ghost-0-Racer', name: 'Racer', ms: 100, recording: valid,
-  })
 })

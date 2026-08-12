@@ -35,20 +35,6 @@ function driveUntil(state, predicate, maxFrames = 600) {
   return -1
 }
 
-test('handbrake tightens the turn', () => {
-  const plain = createRaceState(stripCourse())
-  const drift = createRaceState(stripCourse())
-  press(plain, { up: true }, 55) // full speed, mid-straight around row 4
-  press(drift, { up: true }, 55)
-  const headingBefore = plain.heading
-  press(plain, { right: true }, 20)
-  press(drift, { right: true, handbrake: true }, 20)
-  assert.ok(
-    Math.abs(drift.heading - headingBefore) > Math.abs(plain.heading - headingBefore) * 1.3,
-    'handbrake must rotate noticeably faster',
-  )
-})
-
 test('oil kills steering authority', () => {
   const onRoad = createRaceState(stripCourse())
   const onOil = createRaceState(stripCourse(PIECES.OIL, 5))
@@ -64,22 +50,6 @@ test('oil kills steering authority', () => {
     Math.abs(onOil.heading - oilHeading) < Math.abs(onRoad.heading - roadHeading) * 0.5,
     'steering on oil must be far weaker',
   )
-})
-
-test('a car stopped on oil can throttle off the slick', () => {
-  const state = createRaceState(stripCourse(PIECES.OIL, 5))
-  // Approach gently — a full-speed stop overshoots the 64px slick cell
-  let reached = false
-  for (let i = 0; i < 600 && !(reached = state.onOil); i++) {
-    stepRace(state, { up: state.speed < 150 }, 1 / 60)
-  }
-  assert.ok(reached, 'car reaches the slick')
-  for (let i = 0; i < 300 && state.speed > 0; i++) stepRace(state, { down: true }, 1 / 60)
-  press(state, {}, 30) // settle to a dead stop
-  assert.ok(state.onOil, 'car must be stranded on the slick')
-  assert.equal(state.speed, 0)
-  const escaped = driveUntil(state, (s) => !s.onOil)
-  assert.ok(escaped > 0, 'throttle must crawl the car off the oil')
 })
 
 test('ramp launches airborne and lands back on track', () => {

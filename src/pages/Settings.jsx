@@ -3,13 +3,12 @@ import Alert from 'react-bootstrap/Alert'
 import Card from 'react-bootstrap/Card'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
-import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { GHOST_MODES, getSettings, saveSettings } from '../services/settingsService'
 
 const GHOST_OPTIONS = [
-  { value: GHOST_MODES.BOTH, label: 'Opponents + my best lap', help: 'Race saved Race Night player ghosts, simulated rivals, and your recording.' },
-  { value: GHOST_MODES.RIVALS, label: 'Opponents only', help: 'Race every saved Race Night player ghost alongside simulated rivals.' },
+  { value: GHOST_MODES.BOTH, label: 'Rivals + my best lap', help: 'Race simulated rivals and your recording.' },
+  { value: GHOST_MODES.RIVALS, label: 'Rivals only', help: 'Chase computer-driven rivals on track.' },
   { value: GHOST_MODES.BEST, label: 'My best lap only', help: 'Classic time-trial ghost of your own record.' },
   { value: GHOST_MODES.OFF, label: 'No ghosts', help: 'Just you and the clock.' },
 ]
@@ -58,9 +57,6 @@ export default function Settings() {
           />
         </Card.Body>
       </Card>
-      <p className="mt-4 mb-0">
-        <Link to="/performance">View live performance statistics</Link>
-      </p>
     </Container>
   )
 }

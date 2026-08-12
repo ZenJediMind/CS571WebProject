@@ -94,20 +94,10 @@ export function stepRivalGhosts(ghosts, dtSeconds) {
 /** Samples the player run at fixed sim-time intervals for later replay. */
 export function createGhostRecorder(sampleMs = 100) {
   const samples = []
-  const normalizeHeading = (heading) => {
-    const fullTurn = Math.PI * 2
-    return ((heading + Math.PI) % fullTurn + fullTurn) % fullTurn - Math.PI
-  }
   return {
     sample(state) {
       while (state.elapsedMs >= samples.length * sampleMs) {
-        // Heading only drives replay rendering. Store its equivalent wrapped
-        // angle so repeated laps never exceed the server's bounded payload.
-        samples.push([
-          Math.round(state.x),
-          Math.round(state.y),
-          Math.round(normalizeHeading(state.heading) * 1000),
-        ])
+        samples.push([Math.round(state.x), Math.round(state.y), Math.round(state.heading * 1000)])
       }
     },
     finish(state) {

@@ -344,15 +344,12 @@ function drawCarImage(ctx, pose, carImage, { alpha = 1, scale = 1, shadow = fals
 }
 
 export function drawFrame(ctx, scene) {
-  const {
-    background, marks, state, carImage, bestGhostPose, recordedGhosts = [], rivalGhosts = [], sparks = [],
-  } = scene
+  const { background, marks, state, carImage, bestGhostPose, rivalGhosts = [], sparks = [] } = scene
   ctx.drawImage(background, 0, 0)
   if (marks) ctx.drawImage(marks, 0, 0)
   drawCheckpointHighlight(ctx, state)
 
   if (bestGhostPose) drawCarImage(ctx, bestGhostPose, carImage, { alpha: 0.35 })
-  for (const ghost of recordedGhosts) drawGhostCar(ctx, ghost.pose, ghost.color, ghost.name)
   for (const ghost of rivalGhosts) drawGhostCar(ctx, ghost.state, ghost.color, ghost.name)
 
   const airborne = state.airborneMs > 0

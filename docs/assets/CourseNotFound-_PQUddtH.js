@@ -1,1 +1,0 @@
-import{c as e,r as t,u as n}from"./Button-BzaE0f_W.js";import{i as r}from"./storage-favuUNHS.js";var i=e();function a(){return(0,i.jsxs)(t,{className:`py-4`,children:[(0,i.jsx)(`h1`,{className:`h2 mb-3`,children:`Course not found`}),(0,i.jsxs)(r,{variant:`warning`,children:[`Course not found. `,(0,i.jsx)(r.Link,{as:n,to:`/browse`,children:`Back to Browse`})]})]})}export{a as t};

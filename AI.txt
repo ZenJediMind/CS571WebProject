@@ -10,9 +10,13 @@ My role:
 - Directed the AI through each task, reviewed the generated code and
   the running app, and made the final decisions on gameplay tuning and UX.
 - Tested and iterated on output from AI. Tweaked minor style things.
+- Tried out backend integration, didn't end up working out as I would've liked, so ended up placing it out of scope for timelines sake
+- Iterated a bit more on the UI and cleaning up leaderboards and making it more useable and a bit more fun :)
+- Iterated some on cleaning up the icons and visuals to make it not seem off putting.
 
 AI's role:
 - Implemented the planned modules (services, course model, race engine,
   canvas renderer, React pages/components) following the plan.
 - Wrote deterministic Node test fixtures for the course model and race
   engine (closed-loop path derivation, 3-lap autopilot completion).
+- Poorly impelmented backend, then backed it out.

@@ -7,10 +7,9 @@ import {
 import {
   createGhostRecorder, createRivalGhosts, ghostPoseAt, stepRivalGhosts,
 } from '../game/ghosts'
-import { loadGhost, saveGhostIfFaster } from '../services/ghostService'
-import { getRivalTimes } from '../services/scoreService'
+import { loadGhost, saveGhostIfBest } from '../services/ghostService'
+import { getRivalTimes, recordTimeOnce } from '../services/scoreService'
 import { GHOST_MODES } from '../services/settingsService'
-import { recordPerformance } from '../services/performanceService'
 
 const KEY_BINDINGS = {
   ArrowUp: 'up', KeyW: 'up',
@@ -23,9 +22,6 @@ const KEY_BINDINGS = {
 const EMPTY_INPUTS = { up: false, down: false, left: false, right: false, handbrake: false }
 const HUD_INTERVAL_MS = 100 // ~10Hz — HUD re-renders stay off the 60fps hot path
 const OIL_SKID_MIN_SPEED = 120
-const RECORDED_GHOST_COLORS = [
-  '#e83e8c', '#20c997', '#6f42c1', '#fd7e14', '#0dcaf0', '#dc3545', '#198754', '#ffc107',
-]
 
 const hudSnapshot = (state, split) => ({
   elapsedMs: state.elapsedMs,
@@ -42,9 +38,7 @@ const hudSnapshot = (state, split) => ({
  * particles, skid marks, and audio updates. The animation loop only runs
  * while `racing`; countdown/pause render a single static frame.
  */
-export function useRaceLoop(canvasRef, course, carImage, {
-  racing, onFinish, settings, audioRef, opponentGhosts = [],
-}) {
+export function useRaceLoop(canvasRef, course, carImage, { racing, onFinish, settings, audioRef }) {
   const raceStateRef = useRef(null)
   const heldKeysRef = useRef({ ...EMPTY_INPUTS })
   const inputsRef = useRef({ ...EMPTY_INPUTS })
@@ -53,7 +47,6 @@ export function useRaceLoop(canvasRef, course, carImage, {
   onFinishRef.current = onFinish
 
   const rivalGhostsRef = useRef([])
-  const recordedOpponentGhostsRef = useRef([])
   const bestGhostRef = useRef(null)
   const recorderRef = useRef(null)
   const marksRef = useRef(null)
@@ -87,18 +80,10 @@ export function useRaceLoop(canvasRef, course, carImage, {
     splitRef.current = null
     lastSplitCountRef.current = 0
     bestGhostRef.current = wantBest ? loadGhost(course.id) : null
-    recordedOpponentGhostsRef.current = wantRivals
-      ? opponentGhosts.map((ghost, index) => ({
-        ...ghost,
-        color: RECORDED_GHOST_COLORS[index % RECORDED_GHOST_COLORS.length],
-      }))
-      : []
-    rivalGhostsRef.current = wantRivals
-      ? createRivalGhosts(course, getRivalTimes(course.id))
-      : []
+    rivalGhostsRef.current = wantRivals ? createRivalGhosts(course, getRivalTimes(course.id)) : []
     setHud(hudSnapshot(raceStateRef.current, null))
     drawSceneRef.current?.(0) // repaint immediately (Restart is reachable from the pause modal)
-  }, [course, opponentGhosts, wantBest, wantRivals])
+  }, [course, wantBest, wantRivals])
 
   // (Re)build race state when the course loads or changes
   useEffect(() => { restart() }, [restart])
@@ -153,9 +138,6 @@ export function useRaceLoop(canvasRef, course, carImage, {
         bestGhostPose: bestGhostRef.current
           ? ghostPoseAt(bestGhostRef.current, state.elapsedMs)
           : null,
-        recordedGhosts: recordedOpponentGhostsRef.current
-          .map((ghost) => ({ ...ghost, pose: ghostPoseAt(ghost.recording, state.elapsedMs) }))
-          .filter((ghost) => ghost.pose),
         rivalGhosts: rivalGhostsRef.current,
         sparks: [],
       })
@@ -181,7 +163,6 @@ export function useRaceLoop(canvasRef, course, carImage, {
         lastTimestamp = timestamp
 
         if (dt > 0) {
-          const simulationStartedAt = performance.now()
           // Same stall clamp as stepRace so tab-switch gaps don't desync rivals.
           const simDt = Math.min(dt, MAX_FRAME_SECONDS)
           stepRace(state, inputsRef.current, simDt)
@@ -210,13 +191,9 @@ export function useRaceLoop(canvasRef, course, carImage, {
               splitRef.current = { deltaMs: state.splits[index] - bestSplit, id: state.splits.length }
             }
           }
-          recordPerformance('race.simulation', performance.now() - simulationStartedAt)
         }
 
-        const renderStartedAt = performance.now()
         drawScene(dt * 1000)
-        recordPerformance('race.render', performance.now() - renderStartedAt)
-        if (dt > 0) recordPerformance('race.frame_interval', dt * 1000)
 
         if (timestamp >= hudDueAt) {
           hudDueAt = timestamp + HUD_INTERVAL_MS
@@ -228,8 +205,11 @@ export function useRaceLoop(canvasRef, course, carImage, {
           const recording = recorderRef.current.finish(state)
           const ms = recording.ms
           const resultId = crypto.randomUUID()
-          const ghostSaved = saveGhostIfFaster(course.id, recording)
-          onFinishRef.current?.({ ms, resultId, ghostSaved, recording })
+          // Record the PB first so ghost persistence can gate on bestTimes.
+          const award = recordTimeOnce(resultId, course.id, ms)
+          const ghostOk = award.newBest ? saveGhostIfBest(course.id, recording) : true
+          const ghostSaved = !award.newBest || ghostOk
+          onFinishRef.current?.({ ms, resultId, award, ghostSaved })
         }
       }
       frameId = requestAnimationFrame(frame)

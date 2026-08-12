@@ -12,7 +12,7 @@ const HERO_CANVAS_WIDTH = 960
 const SECONDARY_LINKS = [
   { label: 'Draw Car', to: '/car' },
   { label: 'Leaderboard', to: '/leaderboard' },
-  { label: 'Race Night', to: '/invite' },
+  { label: 'Invite Friends', to: '/invite' },
   { label: 'Settings', to: '/settings' },
 ]
 
@@ -30,7 +30,7 @@ export default function Home() {
         <div className="wr-checker mb-4" aria-hidden="true" />
         <h1 className="wr-hero-title mb-1">Wisconsin Racer</h1>
         <p className="lead wr-home-hero-lead">
-          Build a course, paint your ride, and race the clock with friends.
+          Build a course, paint your ride, and race the clock.
         </p>
         <div className="wr-home-cta">
           <Button as={Link} to="/browse" variant="primary" className="wr-menu-btn">

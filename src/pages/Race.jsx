@@ -3,8 +3,7 @@ import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
 import Modal from 'react-bootstrap/Modal'
-import Spinner from 'react-bootstrap/Spinner'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import CourseNotFound from '../components/CourseNotFound'
 import { getCourse } from '../services/courseService'
 import { defaultCarDataUrl, loadPlayerCar } from '../services/carService'
@@ -13,8 +12,6 @@ import { COURSE_WIDTH, COURSE_HEIGHT } from '../game/render'
 import { RaceAudio } from '../game/audio'
 import { formatMs } from '../services/scoreService'
 import { getSettings, saveSettings } from '../services/settingsService'
-import { getRaceLobby } from '../services/inviteService'
-import { loadRaceLobbyGhosts } from '../services/ghostService'
 import { useRaceLoop } from '../hooks/useRaceLoop'
 
 const COUNTDOWN_START = 3
@@ -44,55 +41,10 @@ function useIsNarrowScreen() {
 export default function Race() {
   const { courseId } = useParams()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const lobbyId = searchParams.get('lobby')
   const canvasRef = useRef(null)
   const isNarrow = useIsNarrowScreen()
 
-  const [course, setCourse] = useState(undefined)
-  const [courseLoadError, setCourseLoadError] = useState(null)
-  const [lobby, setLobby] = useState(null)
-  const [opponentGhosts, setOpponentGhosts] = useState([])
-  const [opponentGhostLoadError, setOpponentGhostLoadError] = useState(null)
-  useEffect(() => {
-    let cancelled = false
-    const loadCourse = async () => {
-      try {
-        let loaded
-        let loadedLobby = null
-        let loadedOpponentGhosts = []
-        let ghostLoadError = null
-        if (lobbyId) {
-          loadedLobby = await getRaceLobby(lobbyId)
-          if (loadedLobby.status !== 'racing') {
-            throw new Error('This race night is not currently running. Return to Race Night for its latest status.')
-          }
-          if (!loadedLobby.course || loadedLobby.course.id !== courseId) {
-            throw new Error('This race does not match the lobby\'s selected course.')
-          }
-          loaded = loadedLobby.course
-          try {
-            loadedOpponentGhosts = await loadRaceLobbyGhosts(lobbyId, loaded.id, loaded.revision)
-          } catch (error) {
-            ghostLoadError = error instanceof Error ? error.message : 'Could not load player ghost replays.'
-          }
-        } else {
-          loaded = await getCourse(courseId)
-        }
-        if (!cancelled) {
-          setLobby(loadedLobby)
-          setOpponentGhosts(loadedOpponentGhosts)
-          setOpponentGhostLoadError(ghostLoadError)
-          setCourse(loaded)
-          setCourseLoadError(null)
-        }
-      } catch (error) {
-        if (!cancelled) setCourseLoadError(error instanceof Error ? error.message : 'Could not load this course.')
-      }
-    }
-    void loadCourse()
-    return () => { cancelled = true }
-  }, [courseId, lobbyId])
+  const course = useMemo(() => getCourse(courseId), [courseId])
   const courseCheck = useMemo(
     () => (course ? validateCourse(course.grid) : null),
     [course],
@@ -178,13 +130,11 @@ export default function Race() {
     return () => clearTimeout(timer)
   }, [countdown, canRace])
 
-  const handleFinish = useCallback(({ ms, resultId, ghostSaved, recording }) => {
+  const handleFinish = useCallback(({ ms, resultId, award, ghostSaved }) => {
     navigate(`/results/${courseId}`, {
-      state: {
-        ms, resultId, ghostSaved, lobbyId, recording,
-      },
+      state: { ms, resultId, award, ghostSaved },
     })
-  }, [navigate, courseId, lobbyId])
+  }, [navigate, courseId])
 
   const racing = canRace && countdown === 0 && !paused
   const { hud, restart } = useRaceLoop(canvasRef, canRace ? course : null, carImage, {
@@ -192,7 +142,6 @@ export default function Race() {
     onFinish: handleFinish,
     settings,
     audioRef,
-    opponentGhosts,
   })
 
   // Asphalt page chrome only while an actual race session is on screen
@@ -231,35 +180,7 @@ export default function Race() {
     setShowGo(false)
   }
 
-  if (course === undefined && !courseLoadError) {
-    return (
-      <Container className="py-5 text-center" role="status" aria-live="polite">
-        <Spinner animation="border" className="me-2" /> Loading race course…
-      </Container>
-    )
-  }
-
-  if (courseLoadError) {
-    return (
-      <Container className="py-4">
-        <Alert variant="danger">{courseLoadError}</Alert>
-      </Container>
-    )
-  }
-
   if (!course) return <CourseNotFound />
-
-  if (lobby?.members.some((member) => member.isYou && member.status === 'finished')) {
-    return (
-      <Container className="py-4">
-        <h1 className="h2 mb-3">Race already finished</h1>
-        <Alert variant="success">
-          Your time for this race night is already locked in.{' '}
-          <Alert.Link as={Link} to="/invite">Return to Race Night</Alert.Link>
-        </Alert>
-      </Container>
-    )
-  }
 
   if (!courseCheck.ok) {
     return (
@@ -300,11 +221,6 @@ export default function Race() {
         <div className="wr-hud-badge">
           CHECK {hud.nextCheckpoint}/{hud.checkpointTotal}
         </div>
-        {opponentGhosts.length > 0 && (
-          <div className="wr-hud-badge" aria-label={`Racing player ghosts: ${opponentGhosts.map((ghost) => ghost.name).join(', ')}`}>
-            PLAYER GHOSTS {opponentGhosts.length}
-          </div>
-        )}
         {visibleSplit && (
           <span
             className={`wr-split-chip ${visibleSplit.deltaMs <= 0 ? 'wr-split-ahead' : 'wr-split-behind'}`}
@@ -336,12 +252,6 @@ export default function Race() {
       {settingsSaveError && (
         <Alert variant="warning" className="py-2" dismissible onClose={() => setSettingsSaveError(false)}>
           Sound changed for this race, but browser storage could not save the setting.
-        </Alert>
-      )}
-
-      {opponentGhostLoadError && (
-        <Alert variant="warning" className="py-2">
-          This race night started without player ghost replays: {opponentGhostLoadError}
         </Alert>
       )}
 

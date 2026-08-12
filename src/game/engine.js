@@ -4,13 +4,13 @@ import { CELL_SIZE, PIECES, cellCenter, derivePath, isTrackCell } from './course
 import { getTheme } from './themes.js'
 
 export const TOTAL_LAPS = 3
-export const MAX_SPEED = 320 // px/s
-const ACCELERATION = 380 // px/s²
-const BRAKE_DECELERATION = 560
+export const MAX_SPEED = 160 // px/s
+const ACCELERATION = 80 // px/s²
+const BRAKE_DECELERATION = 160
 const COAST_FRICTION = 200
-const REVERSE_MAX_SPEED = -90
+const REVERSE_MAX_SPEED = -70
 const TURN_RATE = 4.4 // rad/s at full turn effectiveness
-const BOOST_KICK = 140 // px/s added when entering a boost pad
+const BOOST_KICK = 40 // px/s added when entering a boost pad
 const BOOST_DECAY = 55 // px/s² bleed-off while over MAX_SPEED
 const PIT_MAX_SPEED = MAX_SPEED * 0.55
 const OBSTACLE_BOUNCE_FACTOR = -0.5
@@ -26,7 +26,7 @@ const OIL_STEER_FACTOR = 0.25
 const OIL_FRICTION_FACTOR = 0.3
 const OIL_THROTTLE_FACTOR = 0.35 // weak grip so a stopped car can crawl off
 const RAMP_MIN_SPEED = MAX_SPEED * 0.4
-const AIRBORNE_BASE_MS = 500
+const AIRBORNE_BASE_MS = 250
 
 const cellKey = (row, col) => `${row}:${col}`
 

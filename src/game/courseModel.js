@@ -150,5 +150,8 @@ export function validateCourse(grid) {
       error: 'Track must be one closed loop with exactly one Start/Finish, matching piece connections, and no orphan pieces.',
     }
   }
+  if (path.length < 8) {
+    return { ok: false, error: 'Track is too short — use at least 8 pieces.' }
+  }
   return { ok: true, error: null }
 }
