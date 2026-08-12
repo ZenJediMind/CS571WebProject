@@ -64,6 +64,10 @@ test('recorder + interpolation round-trip', () => {
   const recording = recorder.finish(state)
   assert.ok(recording.samples.length > 50)
   assert.equal(recording.splits.length, (state.checkpoints.length + 1) * state.totalLaps)
+  assert.ok(
+    recording.samples.every(([, , headingMilliRadians]) => Math.abs(headingMilliRadians) <= 3142),
+    'wrapped replay headings remain within one turn',
+  )
 
   const sampleIndex = 40
   const pose = ghostPoseAt(recording, sampleIndex * 100)
