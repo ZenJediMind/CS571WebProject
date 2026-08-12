@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import {
   getInviteShareUrl,
@@ -62,4 +63,12 @@ test('finish-time validation only permits whole non-negative milliseconds', () =
   assert.doesNotThrow(() => inviteInternals.assertFinishTime(23_456))
   assert.throws(() => inviteInternals.assertFinishTime(-1), /non-negative/i)
   assert.throws(() => inviteInternals.assertFinishTime(12.5), /whole number/i)
+})
+
+test('race-lobby migration leaves SQL conditional forms unqualified', async () => {
+  const migration = await readFile(
+    new URL('../supabase/migrations/20260811000000_race_lobbies.sql', import.meta.url),
+    'utf8',
+  )
+  assert.doesNotMatch(migration, /pg_catalog\.(?:coalesce|nullif|greatest|least)\s*\(/i)
 })

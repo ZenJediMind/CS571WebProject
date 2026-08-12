@@ -94,7 +94,7 @@ as $function$
       'grid', lobby.course_grid,
       'theme', lobby.course_theme
     ) end,
-    'members', pg_catalog.coalesce((
+    'members', coalesce((
       select pg_catalog.jsonb_agg(
         pg_catalog.jsonb_build_object(
           'name', member.racer_name,
@@ -171,7 +171,7 @@ as $function$
 declare
   current_user_id uuid := auth.uid();
   compact_code text := pg_catalog.regexp_replace(
-    pg_catalog.upper(pg_catalog.btrim(pg_catalog.coalesce(p_join_code, ''))),
+    pg_catalog.upper(pg_catalog.btrim(coalesce(p_join_code, ''))),
     '[^A-Z0-9]',
     '',
     'g'
